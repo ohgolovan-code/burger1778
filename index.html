@@ -4008,11 +4008,40 @@ function shareMenu() {
     <h3>⚙️ Адмін-панель</h3>
     <button class="admin-close" onclick="toggleAdmin()">✕</button>
   </div>
-  <div class="admin-tabs">
+  <div class="admin-tabs" style="flex-wrap:wrap;gap:4px;">
     <button class="admin-tab active" onclick="switchAdminTab('menu', this)">Меню</button>
+    <button class="admin-tab" onclick="switchAdminTab('banket', this)">Банкет</button>
+    <button class="admin-tab" onclick="switchAdminTab('pominalne', this)">Помінальне</button>
     <button class="admin-tab" onclick="switchAdminTab('contacts', this)">Контакти</button>
   </div>
   <div class="admin-body">
+    <!-- BANKET TAB -->
+    <div class="admin-section" id="atab-banket">
+      <select class="admin-cat-select" id="admin-bk-filter" onchange="renderAdminSpecialMenu('bk')">
+        <option value="bk_холоднi_закуски">Холодні закуски</option>
+        <option value="bk_гарячi_закуски">Гарячі закуски</option>
+        <option value="bk_салати_">Салати</option>
+        <option value="bk_гарячi_страви">Гарячі страви</option>
+        <option value="bk_гарнiри">Гарніри</option>
+      </select>
+      <div id="add-bk-form-wrap"></div>
+      <div id="admin-bk-list"></div>
+    </div>
+
+    <!-- POMINALNE TAB -->
+    <div class="admin-section" id="atab-pominalne">
+      <select class="admin-cat-select" id="admin-pm-filter" onchange="renderAdminSpecialMenu('pm')">
+        <option value="pm_закуски">Закуски</option>
+        <option value="pm_салати">Салати</option>
+        <option value="pm_першi_страви">Перші страви</option>
+        <option value="pm_гарячi_страви">Гарячі страви</option>
+        <option value="pm_гарнiри">Гарніри</option>
+        <option value="pm_напоi">Напої</option>
+      </select>
+      <div id="add-pm-form-wrap"></div>
+      <div id="admin-pm-list"></div>
+    </div>
+
     <!-- MENU TAB -->
     <div class="admin-section active" id="atab-menu">
       <select class="admin-cat-select" id="admin-cat-filter" onchange="renderAdminMenu()">
@@ -4099,6 +4128,139 @@ function switchAdminTab(tab, btn) {
   btn.classList.add('active');
   document.getElementById('atab-' + tab).classList.add('active');
   if (tab === 'stoplist') renderStopList();
+  if (tab === 'menu') renderAdminMenu();
+  if (tab === 'banket') renderAdminSpecialMenu('bk');
+  if (tab === 'pominalne') renderAdminSpecialMenu('pm');
+}
+
+function renderAdminSpecialMenu(prefix) {
+  const selectId = 'admin-' + prefix + '-filter';
+  const select = document.getElementById(selectId);
+  if (!select) return;
+  const cat = select.value;
+  const listId = 'admin-' + prefix + '-list';
+  const wrapId = 'add-' + prefix + '-form-wrap';
+  const items = document.querySelectorAll(`.menu-item[data-cat="${cat}"]`);
+  const list = document.getElementById(listId);
+  const wrap = document.getElementById(wrapId);
+  if (!list) return;
+
+  // Render add-item button/form in wrap
+  if (wrap) {
+    const formId = 'add-item-form-' + cat.replace(/[^a-zA-Zа-яА-ЯіїєґІЇЄҐ0-9_]/g, '_');
+    const nameId = 'new-name-' + cat.replace(/[^a-zA-Zа-яА-ЯіїєґІЇЄҐ0-9_]/g, '_');
+    const descId = 'new-desc-' + cat.replace(/[^a-zA-Zа-яА-ЯіїєґІЇЄҐ0-9_]/g, '_');
+    const priceId = 'new-price-' + cat.replace(/[^a-zA-Zа-яА-ЯіїєґІЇЄҐ0-9_]/g, '_');
+    wrap.innerHTML = `
+      <button onclick="document.getElementById('${formId}').style.display=document.getElementById('${formId}').style.display==='none'?'block':'none'" style="
+        width:100%;padding:10px;background:rgba(201,168,76,0.12);margin-bottom:8px;
+        border:1px dashed rgba(201,168,76,0.5);color:var(--gold);
+        font-family:'Raleway',sans-serif;font-size:0.78rem;letter-spacing:0.1em;
+        text-transform:uppercase;cursor:pointer;border-radius:4px;">
+        ＋ Додати нову страву
+      </button>
+      <div id="${formId}" style="display:none;margin-bottom:10px;padding:12px;background:rgba(245,237,214,0.04);border:1px solid rgba(201,168,76,0.2);border-radius:4px;">
+        <label class="af-label">Назва</label>
+        <input class="af-input" id="${nameId}" placeholder="Назва страви">
+        <label class="af-label">Опис</label>
+        <input class="af-input" id="${descId}" placeholder="Необов'язково">
+        <label class="af-label">Ціна</label>
+        <input class="af-input" id="${priceId}" placeholder="напр. 200 ₴">
+        <button class="af-save-btn" onclick="addNewSpecialItem('${cat}','${nameId}','${descId}','${priceId}','${formId}','${prefix}')" style="margin-top:10px;">✅ Додати</button>
+        <button onclick="document.getElementById('${formId}').style.display='none'" style="width:100%;margin-top:6px;padding:8px;background:transparent;border:1px solid rgba(245,237,214,0.15);color:rgba(245,237,214,0.4);font-family:'Raleway',sans-serif;font-size:0.72rem;cursor:pointer;border-radius:3px;">Скасувати</button>
+      </div>`;
+  }
+
+  list.innerHTML = '';
+  items.forEach((item, idx) => {
+    const name = item.querySelector('.menu-item-name')?.textContent || '';
+    const desc = item.querySelector('.menu-item-desc')?.textContent || '';
+    const price = item.querySelector('.menu-item-price')?.textContent || '';
+    const isHidden = item.dataset.hidden === '1';
+    const uid = `item_${prefix}_${idx}`;
+
+    const div = document.createElement('div');
+    div.className = 'admin-menu-item';
+    div.style.opacity = isHidden ? '0.5' : '1';
+    div.innerHTML = `
+      <div class="admin-item-header" onclick="toggleItemFields('${uid}')">
+        <div class="admin-item-thumb" style="display:flex;align-items:center;justify-content:center;color:rgba(245,237,214,0.2);font-size:1.2rem;">🍽</div>
+        <span class="admin-item-title" style="${isHidden ? 'text-decoration:line-through;color:rgba(245,237,214,0.3)' : ''}">${name}</span>
+        <span style="font-size:0.65rem;margin-right:4px;color:${isHidden ? '#f87171' : 'rgba(100,200,100,0.8)'};">${isHidden ? '🚫' : '✅'}</span>
+        <span class="admin-item-toggle" id="tog_${uid}">▼</span>
+      </div>
+      <div class="admin-item-fields" id="fields_${uid}">
+        <button onclick="toggleItemVisibility(${idx}, '${cat}', this)" style="
+          width:100%;margin-bottom:10px;padding:9px;
+          background:${isHidden ? 'rgba(100,200,100,0.1)' : 'rgba(220,38,38,0.1)'};
+          border:1px solid ${isHidden ? 'rgba(100,200,100,0.4)' : 'rgba(220,38,38,0.35)'};
+          color:${isHidden ? '#86efac' : '#f87171'};
+          font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;
+          font-weight:600;cursor:pointer;border-radius:3px;font-family:'Raleway',sans-serif;">
+          ${isHidden ? '👁 Показати в меню' : '🙈 Приховати з меню'}
+        </button>
+        <label class="af-label">Назва</label>
+        <input class="af-input" id="n_${uid}" value="${name.replace(/"/g,'&quot;')}">
+        <label class="af-label">Опис</label>
+        <input class="af-input" id="d_${uid}" value="${desc.replace(/"/g,'&quot;')}">
+        <label class="af-label">Ціна</label>
+        <input class="af-input" id="p_${uid}" value="${price.replace(/"/g,'&quot;')}">
+        <button class="af-save-btn" onclick="saveItem('${uid}', ${idx}, '${cat}')">💾 Зберегти зміни</button>
+        <button class="af-delete-btn" onclick="deleteItemSpecial('${uid}', ${idx}, '${cat}', '${prefix}')">🗑 Видалити назавжди</button>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+
+  if (items.length === 0) {
+    list.innerHTML = '<div style="color:rgba(245,237,214,0.3);font-size:0.8rem;text-align:center;padding:20px;">Немає страв у цій категорії</div>';
+  }
+}
+
+function addNewSpecialItem(cat, nameId, descId, priceId, formId, prefix) {
+  const name = document.getElementById(nameId)?.value.trim();
+  const desc = document.getElementById(descId)?.value.trim();
+  const price = document.getElementById(priceId)?.value.trim();
+  if (!name) { showToast('⚠️ Введіть назву!'); return; }
+  if (!price) { showToast('⚠️ Введіть ціну!'); return; }
+
+  // Find the correct menu grid (banket or pominalne section)
+  const sectionId = prefix === 'bk' ? 'banket' : 'pominalne';
+  const section = document.getElementById(sectionId);
+  const grid = section ? section.querySelector('.menu-grid') : null;
+  if (!grid) { showToast('❌ Помилка: сітка меню не знайдена'); return; }
+
+  const newItem = document.createElement('div');
+  newItem.className = 'menu-item';
+  newItem.dataset.cat = cat;
+  newItem.innerHTML = `
+    <div class="menu-item-name">${name}</div>
+    ${desc ? `<div class="menu-item-desc">${desc}</div>` : ''}
+    <div class="menu-item-price">${price}</div>
+  `;
+  grid.appendChild(newItem);
+
+  document.getElementById(nameId).value = '';
+  document.getElementById(descId).value = '';
+  document.getElementById(priceId).value = '';
+  document.getElementById(formId).style.display = 'none';
+
+  showToast('✅ Страву додано!');
+  setTimeout(() => renderAdminSpecialMenu(prefix), 100);
+}
+
+function deleteItemSpecial(uid, idx, cat, prefix) {
+  if (!confirm('Видалити цю страву?')) return;
+  const adminCard = document.getElementById('fields_' + uid)?.closest('.admin-menu-item');
+  if (adminCard) { adminCard.classList.add('deleting'); setTimeout(() => adminCard.remove(), 300); }
+  const items = document.querySelectorAll(`.menu-item[data-cat="${cat}"]`);
+  const item = items[idx];
+  if (item) {
+    item.style.transition = 'all 0.3s';
+    item.style.opacity = '0';
+    setTimeout(() => { item.remove(); setTimeout(() => renderAdminSpecialMenu(prefix), 350); }, 300);
+  }
+  showToast('🗑 Видалено!');
 }
 
 function showToast(msg) {
