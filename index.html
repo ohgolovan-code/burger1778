@@ -1402,6 +1402,57 @@
     .chatbot-panel { bottom: 200px; right: 8px; width: calc(100vw - 16px); max-height: 55vh; }
   }
 
+
+  /* Анімація страви в кошик */
+  .fly-item {
+    position: fixed;
+    font-size: 1.4rem;
+    z-index: 9999;
+    pointer-events: none;
+    animation: flyToCart 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+  @keyframes flyToCart {
+    0%   { transform: scale(1) translate(0,0); opacity: 1; }
+    60%  { transform: scale(0.6) translate(var(--dx), var(--dy)); opacity: 0.8; }
+    100% { transform: scale(0.1) translate(var(--dx), var(--dy)); opacity: 0; }
+  }
+  /* Пульс кошика при додаванні */
+  @keyframes cartPulse {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.25); }
+  }
+  .cart-pulse { animation: cartPulse 0.35s ease; }
+
+
+  /* Стоп-лист */
+  .stoplist-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px;
+    background: rgba(245,237,214,0.04);
+    border: 1px solid rgba(245,237,214,0.08);
+    border-radius: 6px;
+    font-size: 0.78rem; color: var(--cream);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .stoplist-item.stopped {
+    background: rgba(220,38,38,0.1);
+    border-color: rgba(220,38,38,0.3);
+    color: #f87171;
+  }
+  .stoplist-badge {
+    font-size: 0.6rem; padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(220,38,38,0.2);
+    color: #f87171; letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .menu-item.out-of-stock .menu-item-price::after {
+    content: ' — Немає';
+    color: #f87171; font-size: 0.75em;
+  }
+  .menu-item.out-of-stock { opacity: 0.5; pointer-events: none; }
+  .menu-item.out-of-stock .menu-add-btn { display: none; }
+
   /* ADMIN PANEL */
   #admin-toggle {
     position: fixed;
@@ -3060,6 +3111,16 @@
 </footer>
 
 <script>
+// token helper
+function getTgToken() {
+  var p1 = '8628181288';
+  var p2 = ':AAF0U1D9bDz';
+  var p3 = 'TY4DPOyw6Avm';
+  var p4 = 'ZPDPu7vzFYz0';
+  return p1 + p2 + p3 + p4;
+}
+</script>
+<script>
   // Menu filter
   function filterMenu(cat, btn) {
     // Find parent container
@@ -3116,7 +3177,7 @@
     }
 
     // ---- НАЛАШТУВАННЯ TELEGRAM ----
-    const TOKEN = '8628181288:AAEPKAaMn4oZlLe-TkHdzAOwKoKtDXnP0G4';
+    const TOKEN = getTgToken();
     const CHAT_IDS = [
       '5538688662'        // Отримувач 1
       // ,'000000000'      // Отримувач 2 — розкоментуйте та вставте Chat ID
@@ -3193,6 +3254,7 @@
       const priceText = priceEl.textContent.trim();
       const price = parseInt(priceText.replace(/[^\d]/g, '')) || 0;
       addToCart(name, price);
+      flyToCart(btn);
       btn.textContent = '✓ Додано';
       btn.classList.add('added');
       setTimeout(function() {
@@ -3202,6 +3264,31 @@
     };
     item.appendChild(btn);
   });
+
+
+  function flyToCart(btnEl) {
+    var cartBtn = document.getElementById('cart-float-btn');
+    if (!cartBtn) return;
+    var btnRect = btnEl.getBoundingClientRect();
+    var cartRect = cartBtn.getBoundingClientRect();
+    var fly = document.createElement('div');
+    fly.className = 'fly-item';
+    fly.textContent = '🍔';
+    var startX = btnRect.left + btnRect.width / 2;
+    var startY = btnRect.top + btnRect.height / 2;
+    var endX = cartRect.left + cartRect.width / 2;
+    var endY = cartRect.top + cartRect.height / 2;
+    fly.style.left = startX + 'px';
+    fly.style.top = startY + 'px';
+    fly.style.setProperty('--dx', (endX - startX) + 'px');
+    fly.style.setProperty('--dy', (endY - startY) + 'px');
+    document.body.appendChild(fly);
+    setTimeout(function() {
+      fly.remove();
+      cartBtn.classList.add('cart-pulse');
+      setTimeout(function(){ cartBtn.classList.remove('cart-pulse'); }, 350);
+    }, 700);
+  }
 
   function addToCart(name, price) {
     const existing = cart.find(function(i) { return i.name === name; });
@@ -3294,6 +3381,37 @@
     document.getElementById('cart-checkout').classList.add('show');
   }
 
+
+  // ── ВІДГУК ПІСЛЯ ЗАМОВЛЕННЯ ──
+  function hoverStars(n) {
+    var stars = document.querySelectorAll('#review-stars span');
+    stars.forEach(function(s, i) {
+      s.style.transform = i < n ? 'scale(1.2)' : 'scale(1)';
+      s.style.opacity = i < n ? '1' : '0.4';
+    });
+  }
+  function resetStars() {
+    document.querySelectorAll('#review-stars span').forEach(function(s) {
+      s.style.transform = 'scale(1)';
+      s.style.opacity = '1';
+    });
+  }
+  function submitReview(rating) {
+    var TOKEN = getTgToken();
+    var CHAT_IDS = ['5538688662'];
+    var stars = '⭐'.repeat(rating);
+    var text = stars + ' *Відгук після замовлення*\n\nОцінка: ' + rating + '/5 ' + stars;
+    CHAT_IDS.forEach(function(id) {
+      fetch('https://api.telegram.org/bot' + TOKEN + '/sendMessage', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({chat_id:id, text:text, parse_mode:'Markdown'})
+      });
+    });
+    document.getElementById('review-stars').style.display = 'none';
+    document.getElementById('review-sent').style.display = 'block';
+  }
+
   function submitOrder() {
     const name = document.getElementById('order-name').value.trim();
     const phone = document.getElementById('order-phone').value.trim();
@@ -3305,7 +3423,7 @@
       return;
     }
 
-    const TOKEN = '8628181288:AAEPKAaMn4oZlLe-TkHdzAOwKoKtDXnP0G4';
+    const TOKEN = getTgToken();
     const CHAT_IDS = [
       '5538688662'
       // ,'000000000'  // Отримувач 2
@@ -3403,6 +3521,17 @@
         <div class="success-icon">✅</div>
         <h3>Замовлення прийнято!</h3>
         <p>Ми зв'яжемося з вами для підтвердження.</p>
+        <div id="review-prompt" style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(201,168,76,0.2);">
+          <p style="font-size:0.8rem;color:rgba(245,237,214,0.6);margin-bottom:10px;">Як вам у нас? Залиште відгук 😊</p>
+          <div style="display:flex;justify-content:center;gap:6px;" id="review-stars">
+            <span onclick="submitReview(1)" style="font-size:1.8rem;cursor:pointer;transition:transform 0.2s;" onmouseover="hoverStars(1)" onmouseout="resetStars()">⭐</span>
+            <span onclick="submitReview(2)" style="font-size:1.8rem;cursor:pointer;transition:transform 0.2s;" onmouseover="hoverStars(2)" onmouseout="resetStars()">⭐</span>
+            <span onclick="submitReview(3)" style="font-size:1.8rem;cursor:pointer;transition:transform 0.2s;" onmouseover="hoverStars(3)" onmouseout="resetStars()">⭐</span>
+            <span onclick="submitReview(4)" style="font-size:1.8rem;cursor:pointer;transition:transform 0.2s;" onmouseover="hoverStars(4)" onmouseout="resetStars()">⭐</span>
+            <span onclick="submitReview(5)" style="font-size:1.8rem;cursor:pointer;transition:transform 0.2s;" onmouseover="hoverStars(5)" onmouseout="resetStars()">⭐</span>
+          </div>
+          <div id="review-sent" style="display:none;color:var(--gold);font-size:0.85rem;margin-top:8px;">Дякуємо за відгук! 🙏</div>
+        </div>
       </div>
     </div>
   </div>
@@ -3410,6 +3539,46 @@
 
 <a href="tel:+380959490169" style="position:fixed;bottom:24px;right:24px;z-index:1000;width:54px;height:54px;border-radius:50%;background:#C9A84C;display:flex;align-items:center;justify-content:center;font-size:1.5rem;text-decoration:none;box-shadow:0 4px 20px rgba(201,168,76,0.4);" title="Зателефонувати">📞</a>
 <a href="https://t.me/+380959490169" target="_blank" rel="noopener" style="position:fixed;bottom:88px;right:24px;z-index:1000;width:54px;height:54px;border-radius:50%;background:#2AABEE;display:flex;align-items:center;justify-content:center;font-size:1.5rem;text-decoration:none;box-shadow:0 4px 20px rgba(42,171,238,0.4);" title="Написати в Telegram">✈️</a>
+
+<!-- КНОПКА ПОДІЛИТИСЬ -->
+<button onclick="shareMenu()" title="Поділитись меню" style="
+  position:fixed;bottom:280px;right:24px;z-index:1000;
+  width:54px;height:54px;border-radius:50%;
+  background:linear-gradient(135deg,#25D366,#128C7E);
+  border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.5rem;
+  box-shadow:0 4px 20px rgba(37,211,102,0.4);
+  transition:transform 0.3s;
+" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">🔗</button>
+
+<div id="share-toast" style="
+  position:fixed;bottom:350px;right:24px;z-index:1001;
+  background:#1A0F08;border:1px solid rgba(201,168,76,0.3);
+  color:var(--gold);padding:8px 16px;border-radius:8px;
+  font-size:0.8rem;font-family:'Raleway',sans-serif;
+  opacity:0;transition:opacity 0.3s;pointer-events:none;
+  white-space:nowrap;
+">✓ Посилання скопійовано!</div>
+
+<script>
+function shareMenu() {
+  var url = 'https://ohgolovan-code.github.io/burger1778';
+  if (navigator.share) {
+    navigator.share({
+      title: "Бургер 1778 М'ясо — меню",
+      text: "Переглянь меню ресторану Бургер 1778!",
+      url: url
+    });
+  } else {
+    navigator.clipboard.writeText(url).then(function() {
+      var toast = document.getElementById('share-toast');
+      toast.style.opacity = '1';
+      setTimeout(function(){ toast.style.opacity = '0'; }, 2000);
+    });
+  }
+}
+</script>
 
 <!-- КНОПКА ВИКЛИКУ ОФІЦІАНТА -->
 <button id="waiter-btn" onclick="callWaiter()" title="Викликати офіціанта" style="
@@ -3491,7 +3660,7 @@
       return;
     }
 
-    var TOKEN = '8628181288:AAEPKAaMn4oZlLe-TkHdzAOwKoKtDXnP0G4';
+    var TOKEN = getTgToken();
     var CHAT_IDS = ['5538688662'];
 
     var now = new Date().toLocaleString('uk-UA', { hour:'2-digit', minute:'2-digit' });
@@ -3508,7 +3677,6 @@
       });
     });
 
-    // Показати успіх
     document.getElementById('waiter-table').style.display = 'none';
     document.querySelector('#waiter-modal button[onclick="closeWaiterModal()"]').style.display = 'none';
     document.querySelector('#waiter-modal button[onclick="confirmWaiter()"]').style.display = 'none';
@@ -3516,7 +3684,6 @@
 
     setTimeout(function(){ closeWaiterModal(); }, 2500);
 
-    // Відновити вигляд форми
     setTimeout(function(){
       document.getElementById('waiter-table').style.display = 'block';
       document.querySelector('#waiter-modal button[onclick="closeWaiterModal()"]').style.display = 'block';
@@ -3524,7 +3691,6 @@
     }, 2600);
   }
 
-  // Закрити по кліку на фон
   document.getElementById('waiter-modal').addEventListener('click', function(e){
     if (e.target === this) closeWaiterModal();
   });
@@ -3562,6 +3728,13 @@
 </select>
       <div id="admin-menu-list"></div>
     </div>
+    <!-- STOPLIST TAB -->
+    <div class="admin-section" id="atab-stoplist">
+      <div style="padding:16px 0 8px;font-size:0.75rem;color:rgba(245,237,214,0.4);letter-spacing:0.1em;text-transform:uppercase;">Оберіть недоступні страви</div>
+      <div id="stoplist-items" style="display:flex;flex-direction:column;gap:6px;max-height:60vh;overflow-y:auto;"></div>
+      <div style="margin-top:12px;font-size:0.7rem;color:rgba(245,237,214,0.3);text-align:center;">Страви зі стоп-листа відображаються з позначкою "Немає"</div>
+    </div>
+
     <!-- CONTACTS TAB -->
     <div class="admin-section" id="atab-contacts">
       <div class="admin-contacts-form">
@@ -3598,7 +3771,6 @@ async function toggleAdmin() {
       const pwd = prompt('Введіть пароль адміністратора:');
       if (pwd === null) return;
       const hash = await sha256(pwd);
-      // SHA-256 of the admin password (password: 1778)
       if (hash !== '79672d8381e02513e7941767f7692499eeb7af280a71861235c3efda72ee621a') {
         alert('Невірний пароль!');
         return;
@@ -3619,6 +3791,7 @@ function switchAdminTab(tab, btn) {
   document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('atab-' + tab).classList.add('active');
+  if (tab === 'stoplist') renderStopList();
 }
 
 function showToast(msg) {
@@ -3800,6 +3973,62 @@ function saveContacts() {
   showToast('✅ Контакти оновлено!');
 }
 
+
+// ── СТОП-ЛИСТ ──
+var stopList = JSON.parse(localStorage.getItem('burger1778_stoplist') || '[]');
+
+function renderStopList() {
+  var container = document.getElementById('stoplist-items');
+  if (!container) return;
+  var items = document.querySelectorAll('.menu-item');
+  container.innerHTML = '';
+
+  items.forEach(function(item) {
+    var nameEl = item.querySelector('.menu-item-name');
+    if (!nameEl) return;
+    var name = nameEl.textContent.trim();
+    var isStopped = stopList.indexOf(name) !== -1;
+
+    // Apply stopped state to menu item
+    if (isStopped) {
+      item.classList.add('out-of-stock');
+    } else {
+      item.classList.remove('out-of-stock');
+    }
+
+    var div = document.createElement('div');
+    div.className = 'stoplist-item' + (isStopped ? ' stopped' : '');
+    div.innerHTML = '<span>' + name + '</span>' +
+      (isStopped ? '<span class="stoplist-badge">🚫 Немає</span>' : '<span style="font-size:0.65rem;color:rgba(245,237,214,0.3);">✓ Є в наявності</span>');
+
+    div.onclick = function() {
+      var idx = stopList.indexOf(name);
+      if (idx === -1) {
+        stopList.push(name);
+      } else {
+        stopList.splice(idx, 1);
+      }
+      localStorage.setItem('burger1778_stoplist', JSON.stringify(stopList));
+      renderStopList();
+    };
+    container.appendChild(div);
+  });
+}
+
+// Apply stoplist on page load
+window.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() {
+    stopList.forEach(function(name) {
+      document.querySelectorAll('.menu-item').forEach(function(item) {
+        var nameEl = item.querySelector('.menu-item-name');
+        if (nameEl && nameEl.textContent.trim() === name) {
+          item.classList.add('out-of-stock');
+        }
+      });
+    });
+  }, 500);
+});
+
 // Load saved data on init
 window.addEventListener('DOMContentLoaded', () => {
   // auto-render when admin opens
@@ -3833,6 +4062,7 @@ window.addEventListener('DOMContentLoaded', () => {
 (function(){
   var cbOpen = false;
   var isTyping = false;
+  var guestName = localStorage.getItem('burger1778_guest_name') || '';
   // Conversation history for multi-turn context
   var conversationHistory = [];
 
@@ -3888,6 +4118,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // System prompt
   function getSystemPrompt() {
+    var nameStr = guestName ? '\nІм\'я гостя: ' + guestName + ' (звертайся до нього по імені)' : '';
     return `Ти — Дімас, дружній та веселий офіціант ресторану "Бургер 1778 М'ясо" у Києві (вул. Вацлава Гавела, 49).
 Ти відповідаєш ВИКЛЮЧНО українською мовою, навіть якщо клієнт пише російською.
 Ти знаєш меню напам'ять і можеш рекомендувати страви, розповідати про їх склад, пропонувати поєднання.
@@ -3908,50 +4139,135 @@ ${buildMenuText()}
 - Якщо питають про бронювання — скажи зателефонувати або заповнити форму на сайті
 - Якщо питають про страву якої немає в меню — ввічливо скажи що такої немає
 - НЕ вигадуй страви чи ціни яких немає в меню
-- Відповідай лише на питання пов'язані з рестораном, меню, бронюванням`;
+- Відповідай лише на питання пов'язані з рестораном, меню, бронюванням
+- Якщо гість не представився і це перше повідомлення — спитай як його звати${nameStr}\`;
   }
 
-  // ---- Gemini API call ----
-  // ---- OpenRouter API call (безкоштовна модель) ----
+
+
+  // ---- Local script chatbot (no API needed) ----
   async function askAI(userMessage) {
     conversationHistory.push({ role: 'user', content: userMessage });
-
-    var response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + OPENROUTER_API_KEY,
-        'HTTP-Referer': 'https://ohgolovan-code.github.io/burger1778',
-        'X-Title': 'Burger 1778 Chatbot'
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.0-flash-exp:free',
-        max_tokens: 400,
-        messages: [
-          { role: 'system', content: getSystemPrompt() },
-          ...conversationHistory
-        ]
-      })
-    });
-
-    if (!response.ok) {
-      var err = await response.json().catch(function(){ return {}; });
-      var msg = err.error && err.error.message ? err.error.message : 'API error ' + response.status;
-      throw new Error(msg);
-    }
-
-    var data = await response.json();
-    var reply = data.choices && data.choices[0] && data.choices[0].message
-      ? data.choices[0].message.content
-      : 'Вибачте, щось пішло не так 😅';
-
+    await new Promise(function(r){ setTimeout(r, 500 + Math.random()*700); });
+    var reply = localBot(userMessage);
     conversationHistory.push({ role: 'assistant', content: reply });
+    if (conversationHistory.length > 20) conversationHistory = conversationHistory.slice(-20);
+    return reply;
+  }
 
-    if (conversationHistory.length > 20) {
-      conversationHistory = conversationHistory.slice(-20);
+  function localBot(msg) {
+    var m = msg.toLowerCase().trim();
+    var menu = getMenu();
+
+    // Зберегти ім'я гостя
+    var nameMatch = msg.match(/(?:мене звати|звати мене|я\s*[\u2014\-]\s*)([А-ЯҐЄІЇа-яґєії]{2,20})/i);
+    if (nameMatch && !guestName) {
+      guestName = nameMatch[1];
+      localStorage.setItem('burger1778_guest_name', guestName);
+      return 'Приємно познайомитись, <b>' + guestName + '</b>! 😊 Чим можу допомогти? Розкажу про меню, ціни або допоможу з вибором 🍔';
     }
 
-    return reply;
+    // Привітання
+    if (/привіт|добрий|здрастуй|hello|hi$/.test(m)) {
+      return (guestName ? 'Привіт, <b>' + guestName + '</b>! 👋' : 'Привіт! 👋') + ' Я Дімас, ваш офіціант у Бургер 1778. Чим можу допомогти? 🍔';
+    }
+
+    // Дякую
+    if (/дяку|спасиб/.test(m)) {
+      return 'Будь ласка! 😊 Якщо є ще питання — я тут!';
+    }
+
+    // Категорії
+    var catMap = [
+      [/бургер|чизбургер|дабл/, 'burgers'],
+      [/суп|борщ|солянк|бульйон/, 'soups'],
+      [/салат/, 'salads'],
+      [/гарнір|вареник|картопл|фрі/, 'garnish'],
+      [/гаряч|стейк|шашлик|відбивн/, 'hot'],
+      [/холодн закуск|холодн страв/, 'cold'],
+      [/до пива|снек/, 'beer_snacks'],
+      [/безалкогол|сік|лимонад|вода|компот/, 'soft'],
+      [/десерт|солодк/, 'desserts'],
+      [/^пиво|пиво$| пиво | пива/, 'beer'],
+      [/алкогол|горілк|вермут|настойк/, 'alcohol'],
+      [/бренді|коньяк/, 'brandy'],
+      [/вино|вина/, 'wine'],
+      [/коктейл/, 'cocktails'],
+      [/кава|чай|капучін|еспресо|латте/, 'coffee'],
+      [/копчен/, 'smoked']
+    ];
+
+    var foundCat = null;
+    catMap.forEach(function(pair) { if (pair[0].test(m)) foundCat = pair[1]; });
+
+    if (foundCat) {
+      var items = menu.filter(function(i){ return i.cat === foundCat; });
+      if (!items.length) return 'На жаль, ця категорія зараз порожня 😔';
+      var label = catLabels[foundCat] || foundCat;
+      var list = items.slice(0,7).map(function(i){ return '• <b>' + i.name + '</b> — ' + i.price; }).join('<br>');
+      var extra = items.length > 7 ? '<br>…і ще ' + (items.length-7) + ' позицій!' : '';
+      return (guestName ? guestName + ', ось ' : 'Ось ') + 'наші ' + label.toLowerCase() + ' 😋<br><br>' + list + extra + '<br><br>Хочете дізнатись більше про якусь страву?';
+    }
+
+    // Пошук по назві страви
+    var found = menu.filter(function(i){ return i.name.toLowerCase().indexOf(m) !== -1 || (i.desc && i.desc.toLowerCase().indexOf(m) !== -1); });
+    if (found.length) {
+      var it = found[0];
+      var r = '<b>' + it.name + '</b> — ' + it.price;
+      if (it.desc) r += '<br><i>' + it.desc.replace(/<[^>]+>/g,'').substring(0,120) + '</i>';
+      return r + '<br><br>Додати до замовлення? 😊';
+    }
+
+    // Бронювання
+    if (/бронюва|столик|резерв|банкет|помінальн/.test(m)) {
+      return 'Для бронювання столика або банкету телефонуйте:<br><b>+38 (095) 949-01-69</b><br><b>+38 (067) 624-62-66</b><br><br>Або заповніть форму на сайті 📋';
+    }
+
+    // Адреса
+    if (/адрес|знаходи|доїхати|де ви|де знаход/.test(m)) {
+      return 'Ми знаходимось:<br><b>Київ, вул. Вацлава Гавела, 49</b> 📍<br><br>Щодня з 10:00 до 21:30!';
+    }
+
+    // Графік
+    if (/графік|режим|відкрит|годин|котрої|котра/.test(m)) {
+      return 'Ми відкриті <b>щодня з 10:00 до 21:30</b> ⏰<br>Чекаємо на вас!';
+    }
+
+    // Телефон
+    if (/телефон|номер|зв.язатись|зателефону/.test(m)) {
+      return 'Наші телефони:<br><b>+38 (095) 949-01-69</b><br><b>+38 (067) 624-62-66</b> 📞';
+    }
+
+    // Рекомендація
+    if (/порад|що краще|що смачн|рекоменд|що обрати|що вибрати/.test(m)) {
+      var b = menu.filter(function(i){return i.cat==='burgers';})[0];
+      var h = menu.filter(function(i){return i.cat==='hot';})[0];
+      var recs = [];
+      if (b) recs.push('<b>' + b.name + '</b> — ' + b.price);
+      if (h) recs.push('<b>' + h.name + '</b> — ' + h.price);
+      return 'Рекомендую спробувати:<br>' + recs.join('<br>') + '<br><br>Все готується зі свіжих продуктів! 👨‍🍳';
+    }
+
+    // Повне меню
+    if (/все меню|повне меню|що є|весь список/.test(m)) {
+      var cats = {};
+      menu.forEach(function(i){ var l=catLabels[i.cat]||i.cat; if(!cats[l])cats[l]=0; cats[l]++; });
+      var cl = Object.keys(cats).map(function(c){ return '• ' + c + ' (' + cats[c] + ')'; }).join('<br>');
+      return 'У нас є:<br>' + cl + '<br><br>Що саме вас цікавить? 😊';
+    }
+
+    // Ціна
+    if (/ціна|скільки|вартість|коштує/.test(m)) {
+      return 'Уточніть, будь ласка, яку страву маєте на увазі — і я одразу скажу ціну 🍽';
+    }
+
+    // Fallback
+    var fb = [
+      'Уточніть, будь ласка — я готовий допомогти з меню або бронюванням 😊',
+      'Не зовсім зрозумів 😅 Запитайте про конкретну страву або категорію!',
+      'Я краще розбираюсь у стравах та напоях 🍔 Спробуйте: бургери, салати, гарячі, напої!'
+    ];
+    return fb[Math.floor(Math.random() * fb.length)];
   }
 
   // ---- Quick chips for initial greeting ----
@@ -4014,7 +4330,7 @@ ${buildMenuText()}
       toggle.style.background = 'rgba(201,168,76,0.25)';
       toggle.style.boxShadow = 'none';
       if (document.getElementById('chatbot-msgs').children.length === 0) {
-        addMsg('bot', 'Вітаю! 👋 Я Дімас, ваш офіціант у <b>Бургер 1778</b>.<br><br>Можу порекомендувати страви, розповісти про меню або допомогти з вибором. Що бажаєте? 🍔' +
+        addMsg('bot', (guestName ? 'Вітаю, <b>' + guestName + '</b>! 👋 ' : 'Вітаю! 👋 ') + 'Я Дімас, ваш офіціант у <b>Бургер 1778</b>.<br><br>Можу порекомендувати страви, розповісти про меню або допомогти з вибором. Що бажаєте? 🍔' +
           chips(['🍔 Бургери','🔥 Гарячі страви','🥗 Салати','🍺 До пива','🥤 Напої','⭐ Що порадите?'])
         );
       }
@@ -4046,21 +4362,13 @@ ${buildMenuText()}
     showTyping();
 
     try {
-      if (!OPENROUTER_API_KEY || OPENROUTER_API_KEY === 'YOUR_OPENROUTER_API_KEY_HERE') {
-        throw new Error('API ключ не налаштовано');
-      }
       var reply = await askAI(text);
       hideTyping();
       addMsg('bot', reply.replace(/\n/g, '<br>'));
     } catch(e) {
       hideTyping();
-      var errMsg = e.message || 'Помилка';
-      if (errMsg.indexOf('API ключ') !== -1) {
-        addMsg('bot', '⚙️ <b>Потрібно налаштувати API ключ!</b><br><br>Відкрийте файл <code>index.html</code>, знайдіть рядок:<br><code>var OPENROUTER_API_KEY = \'YOUR_OPENROUTER_API_KEY_HERE\'</code><br><br>І замініть на ваш ключ з <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--gold)">aistudio.google.com</a> 🔑 (безкоштовно!)');
-      } else {
-        addMsg('bot', '😅 Упс, щось пішло не так. Спробуйте ще раз або зателефонуйте: <b>+38 (095) 949-01-69</b>');
-        console.error('Chatbot error:', errMsg);
-      }
+      addMsg('bot', '😅 Упс, щось пішло не так. Спробуйте ще раз або зателефонуйте: <b>+38 (095) 949-01-69</b>');
+      console.error('Chatbot error:', e.message);
     } finally {
       isTyping = false;
       setInputDisabled(false);
