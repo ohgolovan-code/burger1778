@@ -11,13 +11,13 @@
 <meta name="keywords" content="бургер київ, м'ясний ресторан, стейк, банкет київ, ресторан київ, бургер 1778, замовити бургер">
 <meta name="author" content="Бургер 1778 М'ясо">
 <meta name="robots" content="index, follow">
-<link rel="canonical" href="https://burger1778.netlify.app/">
+<link rel="canonical" href="https://ohgolovan-code.github.io/burger1778/">
 
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="restaurant">
 <meta property="og:title" content="Бургер 1778 М'ясо — М'ясний ресторан у Києві">
 <meta property="og:description" content="Соковиті бургери, стейки, домашні страви. Банкети, помінальні обіди, замовлення на виніс. Вул. Вацлава Гавела, 49, Київ.">
-<meta property="og:url" content="https://burger1778.netlify.app/">
+<meta property="og:url" content="https://ohgolovan-code.github.io/burger1778/">
 <meta property="og:site_name" content="Бургер 1778 М'ясо">
 <meta property="og:locale" content="uk_UA">
 
@@ -27,8 +27,8 @@
   "@context": "https://schema.org",
   "@type": "Restaurant",
   "name": "Бургер 1778 М'ясо",
-  "image": "https://burger1778.netlify.app/",
-  "url": "https://burger1778.netlify.app/",
+  "image": "https://ohgolovan-code.github.io/burger1778/",
+  "url": "https://ohgolovan-code.github.io/burger1778/",
   "telephone": ["+380959490169", "+380676246266"],
   "address": {
     "@type": "PostalAddress",
@@ -1668,8 +1668,71 @@
   #admin-overlay.open { display: block; }
 
 </style>
+<style>
+  /* ЛОАДЕР */
+  #site-loader {
+    position: fixed; inset: 0; z-index: 9999;
+    background: #1A0F08;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    transition: opacity 0.6s ease, visibility 0.6s ease;
+  }
+  #site-loader.hide { opacity: 0; visibility: hidden; }
+
+  .loader-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 3rem; font-weight: 900;
+    color: #C9A84C;
+    letter-spacing: 0.08em;
+    animation: loaderPulse 1.5s ease infinite;
+    margin-bottom: 8px;
+  }
+  .loader-sub {
+    font-family: 'Playfair Display', serif;
+    font-style: italic; font-size: 0.9rem;
+    color: rgba(245,237,214,0.4);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+  }
+  .loader-bar {
+    width: 120px; height: 2px;
+    background: rgba(201,168,76,0.15);
+    border-radius: 2px; overflow: hidden;
+  }
+  .loader-bar-fill {
+    height: 100%;
+    background: linear-gradient(to right, transparent, #C9A84C, transparent);
+    animation: loaderBar 1.4s ease infinite;
+  }
+  @keyframes loaderPulse {
+    0%,100%{opacity:1;transform:scale(1)}
+    50%{opacity:0.7;transform:scale(0.97)}
+  }
+  @keyframes loaderBar {
+    0%{transform:translateX(-100%)}
+    100%{transform:translateX(200%)}
+  }
+</style>
 </head>
 <body>
+
+<!-- ЛОАДЕР -->
+<div id="site-loader">
+  <div class="loader-logo">БУРГЕР 1778</div>
+  <div class="loader-sub">М'ясо · Київ</div>
+  <div class="loader-bar"><div class="loader-bar-fill"></div></div>
+</div>
+
+<script>
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      var loader = document.getElementById('site-loader');
+      loader.classList.add('hide');
+      setTimeout(function(){ loader.style.display='none'; }, 650);
+    }, 800);
+  });
+</script>
 
 <!-- LIGHTBOX -->
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
@@ -1908,7 +1971,7 @@
       <div class="menu-item" data-cat="hot">
         <img class="menu-item-img" src="https://cdn-media.choiceqr.com/prod-eat-burgerandmyaso/menu/iVQQPWH-tpTlJCv-siEkyEG.jpeg" alt="Ребра у фірмовому соусі" loading="lazy" onerror="this.style.display='none'">
         <div class="menu-item-name">Ребра у фірмовому соусі</div>
-        <div class="menu-item-desc">Рум;яно-соковиті реберця зї сввинини, запечені у томатно-
+        <div class="menu-item-desc">Рум'яно-соковиті реберця зі свинини, запечені у томатно-
 яблучному соусі.
 Порція 300 гр.<br><span style="color:rgba(201,168,76,0.6);font-size:0.8em;">100 г</span></div>
         <div class="menu-item-price">110 ₴</div>
@@ -1916,8 +1979,8 @@
       <div class="menu-item" data-cat="hot">
         <img class="menu-item-img" src="https://cdn-media.choiceqr.com/prod-eat-burgerandmyaso/menu/SPrzMoW-YlQkujV-LWFVkDw.jpeg" alt="Стейк зі свинини" loading="lazy" onerror="this.style.display='none'">
         <div class="menu-item-name">Стейк зі свинини</div>
-        <div class="menu-item-desc">Свинячий ошийок, смажений з духм;яними
-травами,подається з фірмовим соусо<br><span style="color:rgba(201,168,76,0.6);font-size:0.8em;">100 г</span></div>
+        <div class="menu-item-desc">Свинячий ошийок, смажений з духм'яними
+травами, подається з фірмовим соусом.<br><span style="color:rgba(201,168,76,0.6);font-size:0.8em;">100 г</span></div>
         <div class="menu-item-price">100 ₴</div>
       </div>
       <div class="menu-item" data-cat="hot">
@@ -3235,6 +3298,7 @@
     const name = document.getElementById('order-name').value.trim();
     const phone = document.getElementById('order-phone').value.trim();
     const notes = document.getElementById('order-notes').value.trim();
+    const table = document.getElementById('order-table').value.trim();
 
     if (!name || !phone) {
       alert('Будь ласка, введіть ім\'я та телефон');
@@ -3254,10 +3318,11 @@
     });
 
     const text =
-      '🛒 *Нове замовлення НА ВИНІС!*\n\n' +
+      (table ? '🪑 *Замовлення зі столика №' + table + '!*' : '🛒 *Нове замовлення НА ВИНІС!*') + '\n\n' +
       '👤 *Ім\'я:* ' + name + '\n' +
-      '📞 *Телефон:* ' + phone + '\n\n' +
-      '📋 *Замовлення:*\n' + itemsText + '\n' +
+      '📞 *Телефон:* ' + phone + '\n' +
+      (table ? '🪑 *Столик:* №' + table + '\n' : '') +
+      '\n📋 *Замовлення:*\n' + itemsText + '\n' +
       '💰 *Разом:* ' + total + ' ₴' +
       (notes ? '\n\n📝 *Коментар:* ' + notes : '');
 
@@ -3285,6 +3350,7 @@
     document.getElementById('order-name').value = '';
     document.getElementById('order-phone').value = '';
     document.getElementById('order-notes').value = '';
+    document.getElementById('order-table').value = '';
 
     // Закрити через 3 секунди
     setTimeout(function() {
@@ -3323,6 +3389,8 @@
         <button class="cart-btn-checkout" onclick="showCheckout()">Оформити замовлення</button>
       </div>
       <div class="cart-checkout" id="cart-checkout">
+        <label>Номер столика <span style="color:rgba(201,168,76,0.6);font-size:0.8em;">(якщо їсте тут)</span></label>
+        <input type="number" id="order-table" placeholder="Столик №" min="1" max="99" style="width:100%;">
         <label>Ім'я</label>
         <input type="text" id="order-name" placeholder="Ваше ім'я">
         <label>Телефон</label>
@@ -3342,6 +3410,125 @@
 
 <a href="tel:+380959490169" style="position:fixed;bottom:24px;right:24px;z-index:1000;width:54px;height:54px;border-radius:50%;background:#C9A84C;display:flex;align-items:center;justify-content:center;font-size:1.5rem;text-decoration:none;box-shadow:0 4px 20px rgba(201,168,76,0.4);" title="Зателефонувати">📞</a>
 <a href="https://t.me/+380959490169" target="_blank" rel="noopener" style="position:fixed;bottom:88px;right:24px;z-index:1000;width:54px;height:54px;border-radius:50%;background:#2AABEE;display:flex;align-items:center;justify-content:center;font-size:1.5rem;text-decoration:none;box-shadow:0 4px 20px rgba(42,171,238,0.4);" title="Написати в Telegram">✈️</a>
+
+<!-- КНОПКА ВИКЛИКУ ОФІЦІАНТА -->
+<button id="waiter-btn" onclick="callWaiter()" title="Викликати офіціанта" style="
+  position:fixed;bottom:216px;right:24px;z-index:1000;
+  width:54px;height:54px;border-radius:50%;
+  background:linear-gradient(135deg,#8B3A2A,#C9501A);
+  border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.5rem;
+  box-shadow:0 4px 20px rgba(139,58,42,0.5);
+  transition:transform 0.3s,box-shadow 0.3s;
+">🛎️</button>
+
+<!-- МОДАЛЬНЕ ВІКНО ВИКЛИКУ -->
+<div id="waiter-modal" style="
+  display:none;position:fixed;inset:0;z-index:2000;
+  background:rgba(26,15,8,0.85);backdrop-filter:blur(4px);
+  align-items:center;justify-content:center;
+">
+  <div style="
+    background:#140c07;border:1px solid rgba(201,168,76,0.3);
+    border-radius:16px;padding:32px 28px;max-width:320px;width:90%;
+    text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);
+  ">
+    <div style="font-size:2.5rem;margin-bottom:12px;">🛎️</div>
+    <div style="font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--gold);margin-bottom:8px;">Викликати офіціанта</div>
+    <div style="font-size:0.85rem;color:rgba(245,237,214,0.6);margin-bottom:20px;line-height:1.6;">Вкажіть номер столика і ми одразу підійдемо!</div>
+    <input id="waiter-table" type="number" min="1" max="99" placeholder="Номер столика"
+      style="width:100%;padding:12px 16px;background:rgba(245,237,214,0.07);
+      border:1px solid rgba(201,168,76,0.3);border-radius:8px;
+      color:var(--cream);font-family:'Raleway',sans-serif;font-size:1rem;
+      outline:none;margin-bottom:16px;text-align:center;letter-spacing:0.1em;"
+      onkeydown="if(event.key==='Enter')confirmWaiter()"
+    >
+    <div style="display:flex;gap:10px;">
+      <button onclick="closeWaiterModal()" style="
+        flex:1;padding:12px;background:transparent;
+        border:1px solid rgba(245,237,214,0.2);border-radius:8px;
+        color:rgba(245,237,214,0.5);font-family:'Raleway',sans-serif;
+        font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;
+      ">Скасувати</button>
+      <button onclick="confirmWaiter()" style="
+        flex:1;padding:12px;background:var(--gold);
+        border:none;border-radius:8px;
+        color:var(--dark);font-family:'Raleway',sans-serif;
+        font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;
+        cursor:pointer;font-weight:700;
+      ">Викликати</button>
+    </div>
+    <div id="waiter-success" style="display:none;margin-top:16px;">
+      <div style="font-size:1.8rem;">✅</div>
+      <div style="color:var(--gold);font-size:0.9rem;margin-top:6px;">Офіціант вже йде до вас!</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  var waiterBtn = document.getElementById('waiter-btn');
+  waiterBtn.addEventListener('mouseenter', function(){ this.style.transform='scale(1.1)'; });
+  waiterBtn.addEventListener('mouseleave', function(){ this.style.transform='scale(1)'; });
+
+  function callWaiter() {
+    var modal = document.getElementById('waiter-modal');
+    modal.style.display = 'flex';
+    document.getElementById('waiter-success').style.display = 'none';
+    document.getElementById('waiter-table').value = '';
+    setTimeout(function(){ document.getElementById('waiter-table').focus(); }, 200);
+  }
+
+  function closeWaiterModal() {
+    document.getElementById('waiter-modal').style.display = 'none';
+  }
+
+  function confirmWaiter() {
+    var table = document.getElementById('waiter-table').value.trim();
+    if (!table) {
+      document.getElementById('waiter-table').style.borderColor = 'rgba(220,38,38,0.6)';
+      document.getElementById('waiter-table').placeholder = 'Введіть номер столика!';
+      return;
+    }
+
+    var TOKEN = '8628181288:AAEPKAaMn4oZlLe-TkHdzAOwKoKtDXnP0G4';
+    var CHAT_IDS = ['5538688662'];
+
+    var now = new Date().toLocaleString('uk-UA', { hour:'2-digit', minute:'2-digit' });
+    var text = '🛎️ *ВИКЛИК ОФІЦІАНТА!*\n\n' +
+               '🪑 *Столик №' + table + '*\n' +
+               '🕐 *Час:* ' + now + '\n\n' +
+               '⚡ Гість чекає на обслуговування!';
+
+    CHAT_IDS.forEach(function(chatId) {
+      fetch('https://api.telegram.org/bot' + TOKEN + '/sendMessage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'Markdown' })
+      });
+    });
+
+    // Показати успіх
+    document.getElementById('waiter-table').style.display = 'none';
+    document.querySelector('#waiter-modal button[onclick="closeWaiterModal()"]').style.display = 'none';
+    document.querySelector('#waiter-modal button[onclick="confirmWaiter()"]').style.display = 'none';
+    document.getElementById('waiter-success').style.display = 'block';
+
+    setTimeout(function(){ closeWaiterModal(); }, 2500);
+
+    // Відновити вигляд форми
+    setTimeout(function(){
+      document.getElementById('waiter-table').style.display = 'block';
+      document.querySelector('#waiter-modal button[onclick="closeWaiterModal()"]').style.display = 'block';
+      document.querySelector('#waiter-modal button[onclick="confirmWaiter()"]').style.display = 'block';
+    }, 2600);
+  }
+
+  // Закрити по кліку на фон
+  document.getElementById('waiter-modal').addEventListener('click', function(e){
+    if (e.target === this) closeWaiterModal();
+  });
+</script>
 
 <div id="admin-panel">
   <div class="admin-header">
@@ -3734,7 +3921,7 @@ ${buildMenuText()}
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + OPENROUTER_API_KEY,
-        'HTTP-Referer': 'https://burger1778.netlify.app',
+        'HTTP-Referer': 'https://ohgolovan-code.github.io/burger1778',
         'X-Title': 'Burger 1778 Chatbot'
       },
       body: JSON.stringify({
