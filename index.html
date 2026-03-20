@@ -4010,6 +4010,7 @@ function shareMenu() {
   </div>
   <div class="admin-tabs" style="flex-wrap:wrap;gap:4px;">
     <button class="admin-tab active" onclick="switchAdminTab('menu', this)">Меню</button>
+    <button class="admin-tab" onclick="switchAdminTab('tabs', this)">+ Вкладки</button>
     <button class="admin-tab" onclick="switchAdminTab('banket', this)">Банкет</button>
     <button class="admin-tab" onclick="switchAdminTab('pominalne', this)">Помінальне</button>
     <button class="admin-tab" onclick="switchAdminTab('contacts', this)">Контакти</button>
@@ -4064,6 +4065,22 @@ function shareMenu() {
 </select>
       <div id="admin-menu-list"></div>
     </div>
+    <!-- TABS MANAGER TAB -->
+    <div class="admin-section" id="atab-tabs">
+      <div style="padding:14px 0 8px;font-size:0.75rem;color:rgba(201,168,76,0.8);letter-spacing:0.1em;text-transform:uppercase;font-weight:600;">Керування вкладками меню</div>
+      <div style="font-size:0.72rem;color:rgba(245,237,214,0.35);margin-bottom:14px;line-height:1.5;">Додавайте нові вкладки (категорії) та страви до них. Зміни зберігаються між сесіями.</div>
+
+      <!-- Форма додавання нової вкладки -->
+      <div style="padding:12px;background:rgba(201,168,76,0.07);border:1px dashed rgba(201,168,76,0.4);border-radius:4px;margin-bottom:14px;">
+        <label class="af-label">Назва нової вкладки</label>
+        <input class="af-input" id="new-tab-label" placeholder="напр. Сніданки, Дитяче меню, Акції">
+        <button class="af-save-btn" onclick="addCustomTab()" style="margin-top:10px;">＋ Створити вкладку</button>
+      </div>
+
+      <!-- Список існуючих кастомних вкладок -->
+      <div id="custom-tabs-list"></div>
+    </div>
+
     <!-- STOPLIST TAB -->
     <div class="admin-section" id="atab-stoplist">
       <div style="padding:16px 0 8px;font-size:0.75rem;color:rgba(245,237,214,0.4);letter-spacing:0.1em;text-transform:uppercase;">Оберіть недоступні страви</div>
@@ -4091,7 +4108,8 @@ function shareMenu() {
     </div>
   </div>
   <div class="admin-footer">
-    <div style="font-size:0.65rem; color:rgba(245,237,214,0.3); text-align:center; letter-spacing:0.1em; text-transform:uppercase;">Зміни зберігаються автоматично</div>
+    <button onclick="exportSiteHTML()" style="width:100%;padding:11px;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.4);color:var(--gold);font-family:'Raleway',sans-serif;font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;border-radius:3px;margin-bottom:8px;transition:all 0.2s;" onmouseover="this.style.background='rgba(201,168,76,0.25)'" onmouseout="this.style.background='rgba(201,168,76,0.15)'">💾 Зберегти HTML-файл сайту</button>
+    <div style="font-size:0.62rem; color:rgba(245,237,214,0.25); text-align:center; letter-spacing:0.08em; text-transform:uppercase;">Зміни в сесії • Для постійного збереження — скачайте файл</div>
   </div>
 </div>
 
@@ -4131,6 +4149,7 @@ function switchAdminTab(tab, btn) {
   if (tab === 'menu') renderAdminMenu();
   if (tab === 'banket') renderAdminSpecialMenu('bk');
   if (tab === 'pominalne') renderAdminSpecialMenu('pm');
+  if (tab === 'tabs') renderCustomTabsList();
 }
 
 function renderAdminSpecialMenu(prefix) {
@@ -4627,10 +4646,249 @@ window.addEventListener('DOMContentLoaded', function() {
   }, 500);
 });
 
-// Load saved data on init
-window.addEventListener('DOMContentLoaded', () => {
-  // auto-render when admin opens
+// ============================================================
+// CUSTOM TABS MANAGER — додавання нових вкладок в меню
+// ============================================================
+
+var CUSTOM_TABS_KEY = 'burger1778_custom_tabs';
+var CUSTOM_ITEMS_KEY = 'burger1778_custom_items';
+var SAVED_PHOTOS_KEY = 'burger1778_photos';
+
+// Завантажуємо збережені дані при старті
+window.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() {
+    loadCustomTabs();
+    loadCustomItems();
+    loadSavedPhotos();
+  }, 600);
 });
+
+function getCustomTabs() {
+  try { return JSON.parse(localStorage.getItem(CUSTOM_TABS_KEY) || '[]'); } catch(e) { return []; }
+}
+function saveCustomTabsToStorage(tabs) {
+  localStorage.setItem(CUSTOM_TABS_KEY, JSON.stringify(tabs));
+}
+
+function addCustomTab() {
+  var label = document.getElementById('new-tab-label').value.trim();
+  if (!label) { showToast('⚠️ Введіть назву вкладки!'); return; }
+
+  var catKey = 'custom_' + Date.now();
+  var tabs = getCustomTabs();
+  tabs.push({ key: catKey, label: label });
+  saveCustomTabsToStorage(tabs);
+  document.getElementById('new-tab-label').value = '';
+
+  // Додаємо кнопку вкладки в меню на сайті
+  addTabButtonToMenu(catKey, label);
+
+  // Додаємо вкладку в адмін select
+  addTabToAdminSelect(catKey, label);
+
+  renderCustomTabsList();
+  showToast('✅ Вкладку "' + label + '" створено!');
+}
+
+function addTabButtonToMenu(catKey, label) {
+  var cats = document.querySelector('.menu-categories');
+  if (!cats) return;
+  if (cats.querySelector('[data-custom-key="' + catKey + '"]')) return;
+  var btn = document.createElement('button');
+  btn.className = 'menu-cat-btn';
+  btn.setAttribute('data-custom-key', catKey);
+  btn.textContent = label;
+  btn.onclick = function() { filterMenu(catKey, btn); };
+  cats.appendChild(btn);
+}
+
+function addTabToAdminSelect(catKey, label) {
+  var sel = document.getElementById('admin-cat-filter');
+  if (!sel) return;
+  if (sel.querySelector('option[value="' + catKey + '"]')) return;
+  var opt = document.createElement('option');
+  opt.value = catKey;
+  opt.textContent = label;
+  sel.appendChild(opt);
+}
+
+function renderCustomTabsList() {
+  var tabs = getCustomTabs();
+  var container = document.getElementById('custom-tabs-list');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (!tabs.length) {
+    container.innerHTML = '<div style="color:rgba(245,237,214,0.3);font-size:0.78rem;text-align:center;padding:20px;">Поки немає кастомних вкладок</div>';
+    return;
+  }
+
+  tabs.forEach(function(tab) {
+    var items = document.querySelectorAll('.menu-item[data-cat="' + tab.key + '"]');
+    var div = document.createElement('div');
+    div.style.cssText = 'background:rgba(245,237,214,0.04);border:1px solid rgba(245,237,214,0.1);border-radius:4px;padding:12px;margin-bottom:8px;';
+    div.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">' +
+      '<span style="font-family:\'Playfair Display\',serif;color:var(--cream);font-size:0.9rem;">' + tab.label + '</span>' +
+      '<span style="font-size:0.68rem;color:rgba(245,237,214,0.35);">' + items.length + ' страв</span>' +
+    '</div>' +
+    '<div style="display:flex;gap:6px;">' +
+      '<button onclick="switchToCustomTabMenu(\'' + tab.key + '\')" style="flex:1;padding:7px;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.4);color:var(--gold);font-family:\'Raleway\',sans-serif;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;border-radius:3px;">✏️ Редагувати страви</button>' +
+      '<button onclick="deleteCustomTab(\'' + tab.key + '\',\'' + tab.label.replace(/'/g,"\\'") + '\')" style="padding:7px 10px;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);color:#f87171;font-family:\'Raleway\',sans-serif;font-size:0.7rem;cursor:pointer;border-radius:3px;">🗑</button>' +
+    '</div>';
+    container.appendChild(div);
+  });
+}
+
+function switchToCustomTabMenu(catKey) {
+  // Перемикаємо на вкладку Меню і вибираємо потрібну категорію
+  var menuTabBtn = document.querySelector('.admin-tab[onclick*="\'menu\'"]');
+  if (menuTabBtn) {
+    switchAdminTab('menu', menuTabBtn);
+    var sel = document.getElementById('admin-cat-filter');
+    if (sel) { sel.value = catKey; renderAdminMenu(); }
+  }
+}
+
+function deleteCustomTab(catKey, label) {
+  if (!confirm('Видалити вкладку "' + label + '" і всі її страви?')) return;
+
+  // Видаляємо з localStorage
+  var tabs = getCustomTabs().filter(function(t) { return t.key !== catKey; });
+  saveCustomTabsToStorage(tabs);
+
+  // Видаляємо страви цієї категорії
+  var items = document.querySelectorAll('.menu-item[data-cat="' + catKey + '"]');
+  items.forEach(function(i) { i.remove(); });
+
+  // Видаляємо збережені страви з localStorage
+  var saved = getSavedItems().filter(function(i) { return i.cat !== catKey; });
+  localStorage.setItem(CUSTOM_ITEMS_KEY, JSON.stringify(saved));
+
+  // Видаляємо кнопку вкладки
+  var btn = document.querySelector('[data-custom-key="' + catKey + '"]');
+  if (btn) btn.remove();
+
+  // Видаляємо з select
+  var sel = document.getElementById('admin-cat-filter');
+  if (sel) { var opt = sel.querySelector('option[value="' + catKey + '"]'); if (opt) opt.remove(); }
+
+  renderCustomTabsList();
+  showToast('🗑 Вкладку видалено!');
+}
+
+function loadCustomTabs() {
+  var tabs = getCustomTabs();
+  tabs.forEach(function(tab) {
+    addTabButtonToMenu(tab.key, tab.label);
+    addTabToAdminSelect(tab.key, tab.label);
+  });
+}
+
+// ============================================================
+// ЗБЕРЕЖЕННЯ НОВИХ СТРАВ в localStorage
+// ============================================================
+
+function getSavedItems() {
+  try { return JSON.parse(localStorage.getItem(CUSTOM_ITEMS_KEY) || '[]'); } catch(e) { return []; }
+}
+
+// Перевизначаємо addNewItem щоб зберігати в localStorage
+var _origAddNewItem = addNewItem;
+addNewItem = function(cat) {
+  var name = document.getElementById('new-name-' + cat)?.value.trim();
+  var desc = document.getElementById('new-desc-' + cat)?.value.trim();
+  var price = document.getElementById('new-price-' + cat)?.value.trim();
+  if (!name || !price) { _origAddNewItem(cat); return; }
+
+  _origAddNewItem(cat);
+
+  // Зберігаємо в localStorage (тільки якщо нова позиція)
+  var saved = getSavedItems();
+  saved.push({ cat: cat, name: name, desc: desc || '', price: price, id: 'saved_' + Date.now() });
+  localStorage.setItem(CUSTOM_ITEMS_KEY, JSON.stringify(saved));
+};
+
+function loadCustomItems() {
+  var saved = getSavedItems();
+  if (!saved.length) return;
+  var menuGrid = document.querySelector('.menu-grid');
+  if (!menuGrid) return;
+
+  saved.forEach(function(item) {
+    // Перевіряємо чи вже є (щоб не дублювати при перезавантаженні — порівнюємо по назві+кат)
+    var exists = false;
+    document.querySelectorAll('.menu-item[data-cat="' + item.cat + '"]').forEach(function(el) {
+      var n = el.querySelector('.menu-item-name');
+      if (n && n.textContent.trim() === item.name) exists = true;
+    });
+    if (exists) return;
+
+    var el = document.createElement('div');
+    el.className = 'menu-item';
+    el.dataset.cat = item.cat;
+    el.dataset.savedId = item.id;
+    el.innerHTML = '<div class="menu-item-name">' + item.name + '</div>' +
+      (item.desc ? '<div class="menu-item-desc">' + item.desc + '</div>' : '') +
+      '<div class="menu-item-price">' + item.price + '</div>';
+    menuGrid.appendChild(el);
+  });
+}
+
+// ============================================================
+// ЗБЕРЕЖЕННЯ ФОТО в localStorage (base64)
+// ============================================================
+
+function loadSavedPhotos() {
+  try {
+    var photos = JSON.parse(localStorage.getItem(SAVED_PHOTOS_KEY) || '{}');
+    Object.keys(photos).forEach(function(key) {
+      // key = "catKey_itemIndex" або "catKey_itemName"
+      var parts = key.split('|||');
+      if (parts.length < 2) return;
+      var cat = parts[0], name = parts[1];
+      document.querySelectorAll('.menu-item[data-cat="' + cat + '"]').forEach(function(item) {
+        var nameEl = item.querySelector('.menu-item-name');
+        if (!nameEl || nameEl.textContent.trim() !== name) return;
+        var img = item.querySelector('.menu-item-img');
+        if (!img) {
+          img = document.createElement('img');
+          img.className = 'menu-item-img';
+          item.insertBefore(img, item.firstChild);
+        }
+        img.src = photos[key];
+      });
+    });
+  } catch(e) {}
+}
+
+// Перевизначаємо handlePhoto щоб зберігати фото
+var _origHandlePhoto = handlePhoto;
+handlePhoto = function(input, uid, idx, cat) {
+  _origHandlePhoto(input, uid, idx, cat);
+
+  // Додатково зберігаємо в localStorage після завантаження
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var src = e.target.result;
+    // Знаходимо назву страви за індексом
+    var items = document.querySelectorAll('.menu-item[data-cat="' + cat + '"]');
+    var item = items[idx];
+    if (!item) return;
+    var nameEl = item.querySelector('.menu-item-name');
+    if (!nameEl) return;
+    var key = cat + '|||' + nameEl.textContent.trim();
+    try {
+      var photos = JSON.parse(localStorage.getItem(SAVED_PHOTOS_KEY) || '{}');
+      photos[key] = src;
+      localStorage.setItem(SAVED_PHOTOS_KEY, JSON.stringify(photos));
+    } catch(e) {
+      showToast('⚠️ Фото занадто велике для збереження');
+    }
+  };
+  reader.readAsDataURL(file);
+};
 </script>
 
 <!-- CHATBOT WAITER (Claude AI) -->
@@ -4970,6 +5228,29 @@ ${buildMenuText()}
     }
   };
 })();
+</script>
+
+<script>
+// ============================================================
+// EXPORT HTML — скачати оновлений файл сайту
+// ============================================================
+function exportSiteHTML() {
+  try {
+    var html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+    var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'index.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('✅ Файл index.html скачано!');
+  } catch(e) {
+    showToast('❌ Помилка збереження');
+  }
+}
 </script>
 
 </body>
