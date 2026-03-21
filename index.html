@@ -3755,7 +3755,7 @@ function renderMenuDB(cat, gridId) {
       ${item.description ? `<div class="menu-item-desc">${item.description}</div>` : ''}
       <div class="menu-item-bottom">
         <div class="menu-item-price">${item.price}</div>
-        <button class="menu-add-btn" onclick="addToCart('${item.name.replace(/'/g,&quot;\\'&quot;)}', parseInt('${item.price}'.replace(/[^\\d]/g,''))||0)">+ Додати</button>
+        <button class="menu-add-btn" onclick="addToCartDB(this, '${item.name.replace(/'/g, String.fromCharCode(39))}', '${item.price}')">+ Додати</button>
       </div>
     </div>
   `).join('');
@@ -3767,6 +3767,19 @@ window.filterMenuDB = function(cat, btn, gridId) {
   section.querySelectorAll('.menu-cat-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderMenuDB(cat, gridId);
+};
+
+// Helper — adds item from DB to cart
+window.addToCartDB = function(btn, name, priceStr) {
+  var price = parseInt(priceStr.replace(/[^0-9]/g, '')) || 0;
+  addToCart(name, price);
+  flyToCart(btn);
+  btn.textContent = '\u2713 \u0414\u043e\u0434\u0430\u043d\u043e';
+  btn.classList.add('added');
+  setTimeout(function() {
+    btn.textContent = '+ \u0414\u043e\u0434\u0430\u0442\u0438';
+    btn.classList.remove('added');
+  }, 1200);
 };
 
 // Load on page ready
