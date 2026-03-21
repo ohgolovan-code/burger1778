@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Адмін — Бургер 1778</title>
+<style>
+  :root {
+    --gold: #C9A84C;
+    --dark: #1A0F08;
+    --warm: #2C1810;
+    --cream: #F5EDD6;
+    --brick: #8B3A2A;
+    --text: #3D2B1F;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#111; color:#eee; font-family: system-ui, sans-serif; min-height:100vh; }
+
+  /* LOGIN */
+  #login-screen {
+    display:flex; align-items:center; justify-content:center;
+    min-height:100vh; background: var(--dark);
+  }
+  .login-box {
+    background: var(--warm); padding:48px 40px; border:1px solid rgba(201,168,76,0.3);
+    text-align:center; max-width:380px; width:100%;
+  }
+  .login-logo { font-size:2rem; color:var(--gold); font-weight:900; margin-bottom:8px; }
+  .login-sub { color:rgba(245,237,214,0.5); font-size:0.85rem; margin-bottom:32px; }
+  .login-input {
+    width:100%; padding:14px 18px; background:rgba(245,237,214,0.07);
+    border:1px solid rgba(245,237,214,0.2); color:var(--cream);
+    font-size:1rem; margin-bottom:12px; outline:none; border-radius:3px;
+    transition: border-color 0.3s;
+  }
+  .login-input:focus { border-color:var(--gold); }
+  .login-btn {
+    width:100%; padding:14px; background:var(--gold); color:var(--dark);
+    border:none; font-size:0.85rem; font-weight:700; letter-spacing:2px;
+    text-transform:uppercase; cursor:pointer; border-radius:3px;
+    transition: opacity 0.3s;
+  }
+  .login-btn:hover { opacity:0.85; }
+  .login-error { color:#f87171; font-size:0.85rem; margin-top:10px; display:none; }
+
+  /* ADMIN PANEL */
+  #admin-panel { display:none; }
+
+  header {
+    background:var(--warm); border-bottom:1px solid rgba(201,168,76,0.25);
+    padding:16px 32px; display:flex; align-items:center; justify-content:space-between;
+    position:sticky; top:0; z-index:100;
+  }
+  .header-logo { color:var(--gold); font-size:1.2rem; font-weight:700; }
+  .header-actions { display:flex; gap:12px; align-items:center; }
+  .btn-logout {
+    background:transparent; border:1px solid rgba(245,237,214,0.2);
+    color:rgba(245,237,214,0.6); padding:8px 16px; cursor:pointer;
+    font-size:0.8rem; border-radius:3px; transition: all 0.2s;
+  }
+  .btn-logout:hover { border-color:var(--gold); color:var(--gold); }
+
+  .main-layout { display:grid; grid-template-columns:220px 1fr; min-height:calc(100vh - 57px); }
+
+  /* SIDEBAR */
+  aside {
+    background:#0f0a06; padding:24px 0; border-right:1px solid rgba(201,168,76,0.1);
+  }
+  .side-section { margin-bottom:8px; }
+  .side-label {
+    font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase;
+    color:rgba(245,237,214,0.3); padding:0 20px 8px;
+  }
+  .side-btn {
+    display:block; width:100%; text-align:left; padding:10px 20px;
+    background:transparent; border:none; color:rgba(245,237,214,0.65);
+    font-size:0.85rem; cursor:pointer; transition: all 0.2s; border-left:2px solid transparent;
+  }
+  .side-btn:hover { color:var(--cream); background:rgba(201,168,76,0.06); }
+  .side-btn.active { color:var(--gold); border-left-color:var(--gold); background:rgba(201,168,76,0.08); }
+
+  /* CONTENT */
+  .content { padding:32px; background:#0d0905; }
+
+  .page { display:none; }
+  .page.active { display:block; }
+
+  .page-title { font-size:1.5rem; color:var(--cream); margin-bottom:8px; }
+  .page-sub { color:rgba(245,237,214,0.4); font-size:0.85rem; margin-bottom:28px; }
+
+  /* STATS */
+  .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px; }
+  .stat-card {
+    background:var(--warm); border:1px solid rgba(201,168,76,0.15);
+    padding:20px; border-radius:6px;
+  }
+  .stat-num { font-size:2rem; color:var(--gold); font-weight:700; }
+  .stat-label { font-size:0.75rem; color:rgba(245,237,214,0.4); margin-top:4px; }
+
+  /* FORM */
+  .form-card {
+    background:var(--warm); border:1px solid rgba(201,168,76,0.15);
+    padding:28px; border-radius:6px; margin-bottom:24px;
+  }
+  .form-card h3 { color:var(--gold); font-size:1rem; margin-bottom:20px; text-transform:uppercase; letter-spacing:1px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .form-group { margin-bottom:16px; }
+  .form-label { display:block; font-size:0.7rem; letter-spacing:1px; text-transform:uppercase; color:rgba(245,237,214,0.5); margin-bottom:6px; }
+  .form-control {
+    width:100%; padding:10px 14px; background:rgba(245,237,214,0.06);
+    border:1px solid rgba(245,237,214,0.15); color:var(--cream);
+    font-size:0.9rem; border-radius:3px; outline:none; transition:border-color 0.3s;
+  }
+  .form-control:focus { border-color:var(--gold); }
+  .form-control option { background:var(--warm); }
+  select.form-control { cursor:pointer; }
+  textarea.form-control { resize:vertical; min-height:80px; }
+
+  .img-preview-row { display:flex; gap:12px; align-items:center; }
+  .img-preview {
+    width:80px; height:80px; border:1px solid rgba(201,168,76,0.2);
+    border-radius:4px; object-fit:cover; display:none; flex-shrink:0;
+  }
+  .img-hint { font-size:0.75rem; color:rgba(245,237,214,0.35); line-height:1.6; }
+
+  .btn-primary {
+    background:var(--gold); color:var(--dark); border:none;
+    padding:12px 28px; font-size:0.8rem; font-weight:700;
+    letter-spacing:1px; text-transform:uppercase; cursor:pointer;
+    border-radius:3px; transition:opacity 0.2s;
+  }
+  .btn-primary:hover { opacity:0.85; }
+  .btn-primary:disabled { opacity:0.5; cursor:not-allowed; }
+
+  .btn-danger {
+    background:transparent; border:1px solid rgba(248,113,113,0.4);
+    color:#f87171; padding:6px 14px; font-size:0.75rem;
+    cursor:pointer; border-radius:3px; transition:all 0.2s;
+  }
+  .btn-danger:hover { background:rgba(248,113,113,0.1); border-color:#f87171; }
+
+  .btn-sm {
+    background:rgba(201,168,76,0.1); border:1px solid rgba(201,168,76,0.3);
+    color:var(--gold); padding:6px 14px; font-size:0.75rem;
+    cursor:pointer; border-radius:3px; transition:all 0.2s;
+  }
+  .btn-sm:hover { background:rgba(201,168,76,0.2); }
+
+  /* ALERT */
+  .alert {
+    padding:12px 16px; border-radius:4px; margin-bottom:16px;
+    font-size:0.85rem; display:none;
+  }
+  .alert-success { background:rgba(99,153,34,0.15); border:1px solid rgba(99,153,34,0.3); color:#a3d96a; }
+  .alert-error { background:rgba(220,38,38,0.12); border:1px solid rgba(220,38,38,0.3); color:#f87171; }
+
+  /* ITEMS TABLE */
+  .items-toolbar {
+    display:flex; gap:12px; margin-bottom:16px; align-items:center; flex-wrap:wrap;
+  }
+  .search-input {
+    padding:9px 14px; background:rgba(245,237,214,0.06);
+    border:1px solid rgba(245,237,214,0.15); color:var(--cream);
+    font-size:0.85rem; border-radius:3px; outline:none; width:240px;
+  }
+  .search-input:focus { border-color:var(--gold); }
+  select.filter-select {
+    padding:9px 14px; background:rgba(245,237,214,0.06);
+    border:1px solid rgba(245,237,214,0.15); color:var(--cream);
+    font-size:0.85rem; border-radius:3px; outline:none; cursor:pointer;
+  }
+  select.filter-select option { background:#1a0f08; }
+  .items-count { color:rgba(245,237,214,0.35); font-size:0.8rem; margin-left:auto; }
+
+  .items-table { width:100%; border-collapse:collapse; }
+  .items-table th {
+    text-align:left; padding:10px 14px; font-size:0.7rem;
+    letter-spacing:1px; text-transform:uppercase;
+    color:rgba(245,237,214,0.35); border-bottom:1px solid rgba(245,237,214,0.08);
+  }
+  .items-table td {
+    padding:12px 14px; border-bottom:1px solid rgba(245,237,214,0.05);
+    font-size:0.85rem; vertical-align:middle;
+  }
+  .items-table tr:hover td { background:rgba(201,168,76,0.04); }
+  .item-thumb {
+    width:48px; height:48px; object-fit:cover; border-radius:4px;
+    border:1px solid rgba(245,237,214,0.1);
+  }
+  .item-thumb-placeholder {
+    width:48px; height:48px; border-radius:4px;
+    background:rgba(245,237,214,0.05); border:1px solid rgba(245,237,214,0.08);
+    display:flex; align-items:center; justify-content:center;
+    color:rgba(245,237,214,0.2); font-size:1.2rem;
+  }
+  .item-name { color:var(--cream); font-weight:500; }
+  .item-cat {
+    display:inline-block; padding:2px 8px; background:rgba(201,168,76,0.1);
+    border:1px solid rgba(201,168,76,0.2); color:rgba(201,168,76,0.8);
+    font-size:0.7rem; border-radius:10px;
+  }
+  .item-price { color:var(--gold); font-weight:600; }
+  .td-actions { display:flex; gap:8px; }
+
+  /* MODAL */
+  .modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,0.8);
+    z-index:1000; display:none; align-items:center; justify-content:center;
+  }
+  .modal-overlay.open { display:flex; }
+  .modal {
+    background:#1a0f08; border:1px solid rgba(201,168,76,0.25);
+    padding:32px; width:100%; max-width:580px; border-radius:8px;
+    max-height:90vh; overflow-y:auto;
+  }
+  .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+  .modal-title { color:var(--gold); font-size:1.1rem; text-transform:uppercase; letter-spacing:1px; }
+  .modal-close { background:none; border:none; color:rgba(245,237,214,0.4); font-size:1.5rem; cursor:pointer; transition:color 0.2s; }
+  .modal-close:hover { color:var(--cream); }
+
+  /* LOADING */
+  .loading {
+    text-align:center; padding:60px; color:rgba(245,237,214,0.3);
+  }
+  .spinner {
+    width:32px; height:32px; border:2px solid rgba(201,168,76,0.2);
+    border-top-color:var(--gold); border-radius:50%;
+    animation:spin 0.8s linear infinite; margin:0 auto 16px;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* PHOTO GUIDE */
+  .photo-guide {
+    background:rgba(201,168,76,0.05); border:1px solid rgba(201,168,76,0.15);
+    border-radius:6px; padding:20px; margin-bottom:24px;
+  }
+  .photo-guide h4 { color:var(--gold); margin-bottom:12px; font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; }
+  .photo-steps { list-style:none; }
+  .photo-steps li { 
+    padding:6px 0; font-size:0.82rem; color:rgba(245,237,214,0.6);
+    display:flex; gap:10px; align-items:flex-start;
+  }
+  .photo-steps li::before { content:'→'; color:var(--gold); flex-shrink:0; }
+  code { background:rgba(245,237,214,0.08); padding:2px 6px; border-radius:3px; font-family:monospace; font-size:0.85em; color:var(--gold); }
+
+  @media(max-width:768px) {
+    .main-layout { grid-template-columns:1fr; }
+    aside { display:none; }
+    .stats-grid { grid-template-columns:1fr 1fr; }
+    .form-row { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Б 1778</div>
+    <div class="login-sub">Адмін-панель управління меню</div>
+    <input type="password" id="login-pass" class="login-input" placeholder="Пароль" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Увійти</button>
+    <div class="login-error" id="login-error">Невірний пароль</div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="admin-panel">
+  <header>
+    <div class="header-logo">🥩 Бургер 1778 — Адмін</div>
+    <div class="header-actions">
+      <a href="https://ohgolovan-code.github.io/burger1778/" target="_blank" style="color:rgba(201,168,76,0.7);text-decoration:none;font-size:0.8rem;">↗ Відкрити сайт</a>
+      <button class="btn-logout" onclick="logout()">Вийти</button>
+    </div>
+  </header>
+
+  <div class="main-layout">
+    <aside>
+      <div class="side-section">
+        <div class="side-label">Навігація</div>
+        <button class="side-btn active" onclick="showPage('dashboard')">📊 Дашборд</button>
+        <button class="side-btn" onclick="showPage('add-item')">➕ Додати страву</button>
+        <button class="side-btn" onclick="showPage('items-list')">📋 Всі страви</button>
+        <button class="side-btn" onclick="showPage('photos')">🖼 Фото — інструкція</button>
+      </div>
+    </aside>
+
+    <main class="content">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <h1 class="page-title">Дашборд</h1>
+        <p class="page-sub">Загальна статистика меню</p>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-num" id="stat-total">—</div><div class="stat-label">Всього страв</div></div>
+          <div class="stat-card"><div class="stat-num" id="stat-with-photo">—</div><div class="stat-label">Із фото</div></div>
+          <div class="stat-card"><div class="stat-num" id="stat-cats">—</div><div class="stat-label">Категорій</div></div>
+          <div class="stat-card"><div class="stat-num" id="stat-banket">—</div><div class="stat-label">Банкетних</div></div>
+        </div>
+        <div class="form-card">
+          <h3>Швидкі дії</h3>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <button class="btn-primary" onclick="showPage('add-item')">➕ Додати страву</button>
+            <button class="btn-sm" onclick="showPage('items-list')">📋 Переглянути всі</button>
+            <button class="btn-sm" onclick="showPage('photos')">🖼 Як додати фото</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADD ITEM -->
+      <div class="page" id="page-add-item">
+        <h1 class="page-title">Додати страву</h1>
+        <p class="page-sub">Нова позиція з'явиться на сайті одразу після збереження</p>
+
+        <div id="add-alert-success" class="alert alert-success">✓ Страву успішно додано!</div>
+        <div id="add-alert-error" class="alert alert-error">Помилка збереження. Перевірте підключення.</div>
+
+        <div class="form-card">
+          <h3>Основна інформація</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Назва страви *</label>
+              <input type="text" class="form-control" id="f-name" placeholder="Наприклад: Бургер Класик">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Ціна *</label>
+              <input type="text" class="form-control" id="f-price" placeholder="180 ₴">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Розділ меню *</label>
+              <select class="form-control" id="f-menu-type" onchange="updateCategoryList()">
+                <option value="main">Основне меню</option>
+                <option value="banket">Банкетне меню</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Категорія *</label>
+              <select class="form-control" id="f-cat"></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Опис / Вага (необов'язково)</label>
+            <input type="text" class="form-control" id="f-desc" placeholder="Наприклад: 200 г або Зі свіжою зеленню">
+          </div>
+        </div>
+
+        <div class="form-card">
+          <h3>Фото страви</h3>
+          <div class="form-group">
+            <label class="form-label">URL фото</label>
+            <div class="img-preview-row">
+              <img id="f-img-preview" class="img-preview" src="" alt="">
+              <div style="flex:1">
+                <input type="text" class="form-control" id="f-img" placeholder="https://ohgolovan-code.github.io/burger1778/images/назва.jpg" oninput="previewImg(this.value)">
+                <div class="img-hint" style="margin-top:8px;">
+                  Завантажте фото на GitHub у папку <code>images/</code>, потім вставте посилання.<br>
+                  Формат: <code>https://ohgolovan-code.github.io/burger1778/images/ваше-фото.jpg</code>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-primary" id="save-btn" onclick="saveItem()">💾 Зберегти страву</button>
+      </div>
+
+      <!-- ITEMS LIST -->
+      <div class="page" id="page-items-list">
+        <h1 class="page-title">Всі страви</h1>
+        <p class="page-sub">Редагування та видалення позицій меню</p>
+
+        <div class="items-toolbar">
+          <input type="text" class="search-input" placeholder="🔍 Пошук по назві..." oninput="filterItems(this.value)">
+          <select class="filter-select" id="cat-filter" onchange="filterItems(document.querySelector('.search-input').value)">
+            <option value="">Всі категорії</option>
+          </select>
+          <span class="items-count" id="items-count"></span>
+        </div>
+
+        <div class="form-card" style="padding:0;overflow:hidden;">
+          <div id="items-loading" class="loading"><div class="spinner"></div>Завантаження...</div>
+          <table class="items-table" id="items-table" style="display:none;">
+            <thead>
+              <tr>
+                <th style="width:64px;">Фото</th>
+                <th>Назва</th>
+                <th>Категорія</th>
+                <th>Ціна</th>
+                <th>Дії</th>
+              </tr>
+            </thead>
+            <tbody id="items-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PHOTOS GUIDE -->
+      <div class="page" id="page-photos">
+        <h1 class="page-title">Як додати фото</h1>
+        <p class="page-sub">Покрокова інструкція для завантаження фото на GitHub</p>
+
+        <div class="photo-guide">
+          <h4>📁 Крок 1 — Завантажте фото на GitHub</h4>
+          <ul class="photo-steps">
+            <li>Зайдіть на <code>github.com/ohgolovan-code/burger1778</code></li>
+            <li>Натисніть <code>Add file</code> → <code>Upload files</code></li>
+            <li>Перетягніть фото у вікно</li>
+            <li>У полі назви файлу напишіть: <code>images/назва-страви.jpg</code> — папка створюється автоматично!</li>
+            <li>Натисніть <code>Commit changes</code></li>
+          </ul>
+        </div>
+
+        <div class="photo-guide">
+          <h4>🔗 Крок 2 — Скопіюйте посилання</h4>
+          <ul class="photo-steps">
+            <li>Після завантаження зайдіть у папку <code>images/</code> у репозиторії</li>
+            <li>Клікніть на потрібне фото</li>
+            <li>Натисніть кнопку <code>Raw</code> — відкриється пряме посилання</li>
+            <li>Скопіюйте URL з адресного рядка браузера</li>
+          </ul>
+        </div>
+
+        <div class="photo-guide">
+          <h4>✅ Правила для фото</h4>
+          <ul class="photo-steps">
+            <li>Формат: <code>.jpg</code> або <code>.webp</code> (не PNG — великий розмір)</li>
+            <li>Розмір: до 500 КБ на фото</li>
+            <li>Пропорції: горизонтальне або квадратне фото</li>
+            <li>Назва файлу: тільки латиниця і дефіси, наприклад <code>burger-classic.jpg</code></li>
+          </ul>
+        </div>
+
+        <div class="photo-guide">
+          <h4>🖼 Ваші завантажені фото</h4>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:12px;">
+            <div style="text-align:center;">
+              <img src="https://ohgolovan-code.github.io/burger1778/images/ailLDCe-XeLkGXF-iDMwepx_aN.jpeg" style="width:100%;height:80px;object-fit:cover;border-radius:4px;border:1px solid rgba(201,168,76,0.2);" onerror="this.parentElement.style.display='none'">
+            </div>
+          </div>
+          <p style="font-size:0.8rem;color:rgba(245,237,214,0.3);margin-top:12px;">Фото завантажені на GitHub стануть доступні тут після оновлення сторінки.</p>
+        </div>
+
+        <button class="btn-primary" onclick="showPage('add-item')">➕ Перейти до додавання страви</button>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Редагувати страву</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="edit-alert-error" class="alert alert-error">Помилка збереження.</div>
+    <div class="form-group">
+      <label class="form-label">Назва *</label>
+      <input type="text" class="form-control" id="e-name">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Ціна</label>
+        <input type="text" class="form-control" id="e-price">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Категорія</label>
+        <select class="form-control" id="e-cat"></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Опис / Вага</label>
+      <input type="text" class="form-control" id="e-desc">
+    </div>
+    <div class="form-group">
+      <label class="form-label">URL фото</label>
+      <input type="text" class="form-control" id="e-img" oninput="previewEditImg(this.value)">
+      <img id="e-img-preview" style="width:80px;height:80px;object-fit:cover;border-radius:4px;margin-top:8px;display:none;">
+    </div>
+    <div style="display:flex;gap:12px;margin-top:8px;">
+      <button class="btn-primary" id="edit-save-btn" onclick="saveEdit()">💾 Зберегти</button>
+      <button class="btn-sm" onclick="closeModal()">Скасувати</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ CONFIG ============
+const SUPABASE_URL = 'https://qexnsuzboyzbspfqpwwa.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFleG5zdXpib3l6YnNwZnFwd3dhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMDQ4NzYsImV4cCI6MjA4OTY4MDg3Nn0.tV-RUArCTb4rYxBloe3GgLyJTq6JbCUh7c6chaN9Z-0';
+const TABLE = 'menu_items';
+const ADMIN_PASSWORD = 'burger1778admin'; // ЗМІНІТЬ ЦЕЙ ПАРОЛЬ!
+
+// ============ CATEGORIES ============
+const MAIN_CATS = [
+  {value:'burgers', label:'Бургери'},
+  {value:'hot', label:'Гарячі страви'},
+  {value:'soups', label:'Супи'},
+  {value:'salads', label:'Салати'},
+  {value:'garnish', label:'Гарніри'},
+  {value:'cold', label:'Холодні закуски'},
+  {value:'beer_snacks', label:'До пива'},
+  {value:'smoked', label:'Копчення'},
+  {value:'desserts', label:'Десерти'},
+  {value:'soft', label:'Безалкогольні напої'},
+  {value:'beer', label:'Пиво'},
+  {value:'wine', label:'Вино'},
+  {value:'brandy', label:'Бренді/Коньяк'},
+  {value:'cocktails', label:'Коктейлі'},
+  {value:'coffee', label:'Кава/Чай'},
+  {value:'alcohol', label:'Алкоголь'},
+];
+const BANKET_CATS = [
+  {value:'bk_холоднi_закуски', label:'Холодні закуски'},
+  {value:'bk_гарячi_закуски', label:'Гарячі закуски'},
+  {value:'bk_салати_', label:'Салати'},
+  {value:'bk_гарячi_страви', label:'Гарячі страви'},
+  {value:'bk_гарнiри', label:'Гарніри'},
+  {value:'pm_гарячi_страви', label:'Пом. — Гарячі страви'},
+  {value:'pm_салати', label:'Пом. — Салати'},
+  {value:'pm_закуски', label:'Пом. — Закуски'},
+  {value:'pm_гарнiри', label:'Пом. — Гарніри'},
+  {value:'pm_супи', label:'Пом. — Супи'},
+];
+const ALL_CATS = [...MAIN_CATS, ...BANKET_CATS];
+
+// ============ STATE ============
+let allItems = [];
+let editingId = null;
+
+// ============ AUTH ============
+function doLogin() {
+  const pass = document.getElementById('login-pass').value;
+  if (pass === ADMIN_PASSWORD) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+    sessionStorage.setItem('admin_auth', '1');
+    initAdmin();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+    document.getElementById('login-pass').value = '';
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem('admin_auth');
+  location.reload();
+}
+
+// ============ SUPABASE ============
+async function sbFetch(method, path, body) {
+  const opts = {
+    method,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'return=representation' : 'return=minimal'
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, opts);
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+async function loadItems() {
+  return await sbFetch('GET', TABLE + '?order=created_at.asc&limit=1000', null);
+}
+
+async function insertItem(item) {
+  return await sbFetch('POST', TABLE, item);
+}
+
+async function updateItem(id, item) {
+  return await sbFetch('PATCH', TABLE + '?id=eq.' + id, item);
+}
+
+async function deleteItem(id) {
+  return await sbFetch('DELETE', TABLE + '?id=eq.' + id, null);
+}
+
+// ============ INIT ============
+async function initAdmin() {
+  updateCategoryList();
+  fillEditCats();
+  await loadDashboard();
+}
+
+async function loadDashboard() {
+  try {
+    allItems = await loadItems();
+    updateStats();
+    renderItemsTable();
+    fillCatFilter();
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+function updateStats() {
+  document.getElementById('stat-total').textContent = allItems.length;
+  document.getElementById('stat-with-photo').textContent = allItems.filter(i => i.img_url).length;
+  const cats = new Set(allItems.map(i => i.category));
+  document.getElementById('stat-cats').textContent = cats.size;
+  document.getElementById('stat-banket').textContent = allItems.filter(i => i.category && i.category.startsWith('bk_')).length;
+}
+
+// ============ PAGES ============
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.side-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.side-btn').forEach(b => {
+    if (b.textContent.toLowerCase().includes(name.replace('-',' ').toLowerCase()) ||
+        b.getAttribute('onclick') && b.getAttribute('onclick').includes(name)) {
+      b.classList.add('active');
+    }
+  });
+  if (name === 'items-list') renderItemsTable();
+}
+
+// ============ CATEGORIES ============
+function updateCategoryList() {
+  const type = document.getElementById('f-menu-type').value;
+  const cats = type === 'banket' ? BANKET_CATS : MAIN_CATS;
+  const sel = document.getElementById('f-cat');
+  sel.innerHTML = cats.map(c => `<option value="${c.value}">${c.label}</option>`).join('');
+}
+
+function fillEditCats() {
+  const sel = document.getElementById('e-cat');
+  sel.innerHTML = ALL_CATS.map(c => `<option value="${c.value}">${c.label}</option>`).join('');
+}
+
+function fillCatFilter() {
+  const sel = document.getElementById('cat-filter');
+  const cats = [...new Set(allItems.map(i => i.category))].sort();
+  sel.innerHTML = '<option value="">Всі категорії</option>' +
+    cats.map(c => {
+      const label = ALL_CATS.find(x => x.value === c)?.label || c;
+      return `<option value="${c}">${label}</option>`;
+    }).join('');
+}
+
+function getCatLabel(cat) {
+  return ALL_CATS.find(c => c.value === cat)?.label || cat;
+}
+
+// ============ ADD ITEM ============
+function previewImg(url) {
+  const img = document.getElementById('f-img-preview');
+  if (url) {
+    img.src = url;
+    img.style.display = 'block';
+    img.onerror = () => img.style.display = 'none';
+  } else {
+    img.style.display = 'none';
+  }
+}
+
+async function saveItem() {
+  const name = document.getElementById('f-name').value.trim();
+  const price = document.getElementById('f-price').value.trim();
+  const cat = document.getElementById('f-cat').value;
+  const desc = document.getElementById('f-desc').value.trim();
+  const img = document.getElementById('f-img').value.trim();
+
+  if (!name || !price) {
+    showAlert('add-alert-error', "Заповніть назву і ціну");
+    return;
+  }
+
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Збереження...';
+
+  try {
+    await insertItem({ name, price, category: cat, description: desc, img_url: img });
+    showAlert('add-alert-success');
+    document.getElementById('f-name').value = '';
+    document.getElementById('f-price').value = '';
+    document.getElementById('f-desc').value = '';
+    document.getElementById('f-img').value = '';
+    document.getElementById('f-img-preview').style.display = 'none';
+    allItems = await loadItems();
+    updateStats();
+  } catch(e) {
+    showAlert('add-alert-error', 'Помилка: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '💾 Зберегти страву';
+  }
+}
+
+// ============ ITEMS TABLE ============
+function renderItemsTable() {
+  const loading = document.getElementById('items-loading');
+  const table = document.getElementById('items-table');
+  loading.style.display = 'none';
+  table.style.display = 'table';
+
+  const search = document.querySelector('.search-input')?.value.toLowerCase() || '';
+  const catFilter = document.getElementById('cat-filter')?.value || '';
+
+  let filtered = allItems.filter(item => {
+    const matchSearch = !search || item.name.toLowerCase().includes(search);
+    const matchCat = !catFilter || item.category === catFilter;
+    return matchSearch && matchCat;
+  });
+
+  document.getElementById('items-count').textContent = filtered.length + ' страв';
+
+  const tbody = document.getElementById('items-tbody');
+  tbody.innerHTML = filtered.map(item => `
+    <tr id="row-${item.id}">
+      <td>
+        ${item.img_url
+          ? `<img src="${item.img_url}" class="item-thumb" onerror="this.style.display='none'">`
+          : `<div class="item-thumb-placeholder">🍽</div>`}
+      </td>
+      <td><div class="item-name">${item.name}</div>${item.description ? `<div style="font-size:0.75rem;color:rgba(245,237,214,0.35);margin-top:2px;">${item.description}</div>` : ''}</td>
+      <td><span class="item-cat">${getCatLabel(item.category)}</span></td>
+      <td class="item-price">${item.price}</td>
+      <td>
+        <div class="td-actions">
+          <button class="btn-sm" onclick="openEdit(${item.id})">✏️ Редаг.</button>
+          <button class="btn-danger" onclick="confirmDelete(${item.id}, '${item.name.replace(/'/g,"\\'")}')">🗑</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterItems(search) {
+  renderItemsTable();
+}
+
+// ============ EDIT ============
+function openEdit(id) {
+  const item = allItems.find(i => i.id === id);
+  if (!item) return;
+  editingId = id;
+  document.getElementById('e-name').value = item.name || '';
+  document.getElementById('e-price').value = item.price || '';
+  document.getElementById('e-desc').value = item.description || '';
+  document.getElementById('e-img').value = item.img_url || '';
+  document.getElementById('e-cat').value = item.category || '';
+  previewEditImg(item.img_url);
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function previewEditImg(url) {
+  const img = document.getElementById('e-img-preview');
+  if (url) { img.src = url; img.style.display = 'block'; img.onerror = () => img.style.display='none'; }
+  else img.style.display = 'none';
+}
+
+function closeModal() {
+  document.getElementById('edit-modal').classList.remove('open');
+  editingId = null;
+}
+
+async function saveEdit() {
+  if (!editingId) return;
+  const btn = document.getElementById('edit-save-btn');
+  btn.disabled = true; btn.textContent = 'Збереження...';
+  try {
+    await updateItem(editingId, {
+      name: document.getElementById('e-name').value.trim(),
+      price: document.getElementById('e-price').value.trim(),
+      description: document.getElementById('e-desc').value.trim(),
+      img_url: document.getElementById('e-img').value.trim(),
+      category: document.getElementById('e-cat').value,
+    });
+    allItems = await loadItems();
+    updateStats();
+    renderItemsTable();
+    fillCatFilter();
+    closeModal();
+  } catch(e) {
+    showAlert('edit-alert-error', 'Помилка: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '💾 Зберегти';
+  }
+}
+
+// ============ DELETE ============
+async function confirmDelete(id, name) {
+  if (!confirm(`Видалити "${name}"?`)) return;
+  try {
+    await deleteItem(id);
+    allItems = allItems.filter(i => i.id !== id);
+    updateStats();
+    renderItemsTable();
+    fillCatFilter();
+  } catch(e) {
+    alert('Помилка видалення: ' + e.message);
+  }
+}
+
+// ============ UTILS ============
+function showAlert(id, msg) {
+  const el = document.getElementById(id);
+  if (msg) el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+
+// Check session
+if (sessionStorage.getItem('admin_auth') === '1') {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('admin-panel').style.display = 'block';
+  initAdmin();
+}
+</script>
+</body>
+</html>
