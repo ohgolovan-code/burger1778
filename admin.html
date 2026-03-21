@@ -349,17 +349,29 @@
         <div class="form-card">
           <h3>Фото страви</h3>
           <div class="form-group">
-            <label class="form-label">URL фото</label>
-            <div class="img-preview-row">
+            <div class="img-preview-row" style="margin-bottom:12px;">
               <img id="f-img-preview" class="img-preview" src="" alt="">
-              <div style="flex:1">
-                <input type="text" class="form-control" id="f-img" placeholder="https://ohgolovan-code.github.io/burger1778/images/назва.jpg" oninput="previewImg(this.value)">
-                <div class="img-hint" style="margin-top:8px;">
-                  Завантажте фото на GitHub у папку <code>images/</code>, потім вставте посилання.<br>
-                  Формат: <code>https://ohgolovan-code.github.io/burger1778/images/ваше-фото.jpg</code>
+              <div style="flex:1;">
+                <div id="f-upload-zone" style="border:2px dashed rgba(201,168,76,0.3);border-radius:6px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:rgba(201,168,76,0.03);"
+                  onclick="document.getElementById('f-file-input').click()"
+                  ondragover="event.preventDefault();this.style.borderColor='var(--gold)'"
+                  ondragleave="this.style.borderColor='rgba(201,168,76,0.3)'"
+                  ondrop="handleFileDrop(event,'f')">
+                  <div style="font-size:1.5rem;margin-bottom:6px;">📷</div>
+                  <div style="color:var(--gold);font-size:0.85rem;margin-bottom:4px;">Натисніть або перетягніть фото</div>
+                  <div style="color:rgba(245,237,214,0.3);font-size:0.75rem;">JPG, PNG, WEBP до 2MB</div>
+                  <input type="file" id="f-file-input" accept="image/*" style="display:none" onchange="uploadPhoto(this.files[0],'f')">
+                </div>
+                <div id="f-upload-progress" style="display:none;margin-top:8px;">
+                  <div style="height:4px;background:rgba(245,237,214,0.1);border-radius:2px;overflow:hidden;">
+                    <div id="f-progress-bar" style="height:100%;background:var(--gold);width:0%;transition:width 0.3s;"></div>
+                  </div>
+                  <div id="f-upload-status" style="font-size:0.75rem;color:rgba(245,237,214,0.5);margin-top:4px;">Завантаження...</div>
                 </div>
               </div>
             </div>
+            <label class="form-label" style="margin-top:8px;">Або вставте URL вручну</label>
+            <input type="text" class="form-control" id="f-img" placeholder="https://..." oninput="previewImg(this.value)">
           </div>
         </div>
 
@@ -476,9 +488,21 @@
       <input type="text" class="form-control" id="e-desc">
     </div>
     <div class="form-group">
-      <label class="form-label">URL фото</label>
-      <input type="text" class="form-control" id="e-img" oninput="previewEditImg(this.value)">
-      <img id="e-img-preview" style="width:80px;height:80px;object-fit:cover;border-radius:4px;margin-top:8px;display:none;">
+      <label class="form-label">Фото</label>
+      <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:8px;">
+        <img id="e-img-preview" style="width:70px;height:70px;object-fit:cover;border-radius:4px;display:none;flex-shrink:0;">
+        <div style="flex:1;">
+          <div style="border:2px dashed rgba(201,168,76,0.3);border-radius:6px;padding:12px;text-align:center;cursor:pointer;"
+            onclick="document.getElementById('e-file-input').click()"
+            ondragover="event.preventDefault()"
+            ondrop="handleFileDrop(event,'e')">
+            <div style="color:var(--gold);font-size:0.8rem;">📷 Завантажити нове фото</div>
+            <input type="file" id="e-file-input" accept="image/*" style="display:none" onchange="uploadPhoto(this.files[0],'e')">
+          </div>
+          <div id="e-upload-status" style="font-size:0.75rem;color:rgba(245,237,214,0.4);margin-top:4px;display:none;">Завантаження...</div>
+        </div>
+      </div>
+      <input type="text" class="form-control" id="e-img" placeholder="або вставте URL..." oninput="previewEditImg(this.value)">
     </div>
     <div style="display:flex;gap:12px;margin-top:8px;">
       <button class="btn-primary" id="edit-save-btn" onclick="saveEdit()">💾 Зберегти</button>
@@ -812,6 +836,72 @@ function showAlert(id, msg) {
   if (msg) el.textContent = msg;
   el.style.display = 'block';
   setTimeout(() => el.style.display = 'none', 4000);
+}
+
+// ============ PHOTO UPLOAD ============
+async function uploadPhoto(file, prefix) {
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) {
+    alert('Фото завелике! Максимум 2MB');
+    return;
+  }
+
+  const progressDiv = document.getElementById(prefix + '-upload-progress');
+  const statusEl = document.getElementById(prefix + '-upload-status');
+  const bar = document.getElementById(prefix + '-progress-bar');
+
+  if (progressDiv) progressDiv.style.display = 'block';
+  if (statusEl) { statusEl.style.display = 'block'; statusEl.textContent = 'Завантаження...'; }
+  if (bar) bar.style.width = '30%';
+
+  try {
+    const ext = file.name.split('.').pop().toLowerCase();
+    const fileName = Date.now() + '-' + Math.random().toString(36).substr(2,6) + '.' + ext;
+
+    const res = await fetch(SUPABASE_URL + '/storage/v1/object/menu-images/' + fileName, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': file.type,
+        'x-upsert': 'true'
+      },
+      body: file
+    });
+
+    if (!res.ok) throw new Error('Upload failed: ' + res.status);
+
+    if (bar) bar.style.width = '100%';
+    if (statusEl) statusEl.textContent = '✓ Завантажено!';
+
+    const publicUrl = SUPABASE_URL + '/storage/v1/object/public/menu-images/' + fileName;
+
+    // Set URL in input
+    const imgInput = document.getElementById(prefix + '-img');
+    if (imgInput) {
+      imgInput.value = publicUrl;
+      if (prefix === 'f') previewImg(publicUrl);
+      if (prefix === 'e') previewEditImg(publicUrl);
+    }
+
+    setTimeout(() => {
+      if (progressDiv) progressDiv.style.display = 'none';
+      if (statusEl) statusEl.style.display = 'none';
+      if (bar) bar.style.width = '0%';
+    }, 2000);
+
+  } catch(e) {
+    if (statusEl) { statusEl.style.display='block'; statusEl.textContent = 'Помилка: ' + e.message; }
+    console.error('Upload error:', e);
+  }
+}
+
+function handleFileDrop(event, prefix) {
+  event.preventDefault();
+  const file = event.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) {
+    uploadPhoto(file, prefix);
+  }
 }
 
 // Check session
