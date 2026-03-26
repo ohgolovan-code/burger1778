@@ -2416,6 +2416,73 @@ function shareMenu() {
   document.getElementById('waiter-modal').addEventListener('click', function(e){
     if (e.target === this) closeWaiterModal();
   });
+
+  // ===== TELEGRAM PROXY via Supabase Edge Function =====
+  function sendTelegram(type, data) {
+    return fetch('https://wzvthkzfcjfbefgsctic.supabase.co/functions/v1/send-telegram', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: type, data: data })
+    }).then(function(r) { return r.json(); });
+  }
+
+  // ===== BOOKING =====
+  function submitBooking() {
+    var name  = (document.getElementById('b-name')   || {}).value || '';
+    var phone = (document.getElementById('b-phone')  || {}).value || '';
+    var date  = (document.getElementById('b-date')   || {}).value || '';
+    var time  = (document.getElementById('b-time')   || {}).value || '';
+    var guests= (document.getElementById('b-guests') || {}).value || '';
+    var hall  = (document.getElementById('b-hall')   || {}).value || '';
+    var notes = (document.getElementById('b-notes')  || {}).value || '';
+
+    if (!name.trim() || !phone.trim() || !date) {
+      showToast('⚠️ Заповніть ім\'я, телефон та дату!');
+      return;
+    }
+
+    sendTelegram('booking', { name: name, phone: phone, date: date, time: time, guests: guests, hall: hall, notes: notes })
+      .catch(function(err) { console.error('Booking error:', err); });
+
+    document.querySelector('.booking-form') && (document.querySelector('.booking-form').style.display = 'none');
+    var suc = document.getElementById('booking-success');
+    if (suc) suc.style.display = 'block';
+  }
+
+  // ===== REVIEW =====
+  function submitReview() {
+    var name   = (document.getElementById('rev-name')   || document.getElementById('review-name')   || {}).value || '';
+    var text   = (document.getElementById('rev-text')   || document.getElementById('review-text')   || {}).value || '';
+    var rating = document.querySelector('.star-rating .active, [data-rating].active, input[name="rating"]:checked');
+    var ratingVal = rating ? (rating.dataset.rating || rating.value || '5') : '5';
+
+    if (!name.trim() || !text.trim()) {
+      showToast('⚠️ Заповніть ім\'я та текст відгуку!');
+      return;
+    }
+
+    sendTelegram('review', { name: name, text: text, rating: ratingVal })
+      .catch(function(err) { console.error('Review error:', err); });
+
+    showToast('✅ Дякуємо за відгук!');
+  }
+
+  // ===== ORDER =====
+  function submitOrder() {
+    var name  = (document.getElementById('order-name')  || {}).value || '';
+    var phone = (document.getElementById('order-phone') || {}).value || '';
+    var items = window.cart || [];
+
+    if (!name.trim() || !phone.trim()) {
+      showToast('⚠️ Заповніть ім\'я та телефон!');
+      return;
+    }
+
+    sendTelegram('order', { name: name, phone: phone, items: items })
+      .catch(function(err) { console.error('Order error:', err); });
+
+    showToast('✅ Замовлення прийнято!');
+  }
 </script>
 
 
