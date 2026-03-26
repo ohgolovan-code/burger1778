@@ -243,11 +243,47 @@
   .photo-steps li::before { content:'→'; color:var(--gold); flex-shrink:0; }
   code { background:rgba(245,237,214,0.08); padding:2px 6px; border-radius:3px; font-family:monospace; font-size:0.85em; color:var(--gold); }
 
+  /* MOBILE NAV BAR (admin) */
+  .mobile-admin-nav {
+    display: none;
+    background: #0f0a06;
+    border-top: 1px solid rgba(201,168,76,0.15);
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 200;
+    padding: 8px 0 env(safe-area-inset-bottom, 0);
+  }
+  .mobile-admin-nav-inner {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+  .mob-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    background: none;
+    border: none;
+    color: rgba(245,237,214,0.45);
+    font-size: 0.6rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 8px 12px;
+    transition: color 0.2s;
+  }
+  .mob-nav-btn .mob-icon { font-size: 1.2rem; }
+  .mob-nav-btn.active { color: var(--gold); }
+  .mob-nav-btn:hover { color: var(--cream); }
+
   @media(max-width:768px) {
     .main-layout { grid-template-columns:1fr; }
     aside { display:none; }
     .stats-grid { grid-template-columns:1fr 1fr; }
     .form-row { grid-template-columns:1fr; }
+    .mobile-admin-nav { display: block; }
+    .content { padding: 20px 16px 80px; }
   }
 </style>
 </head>
@@ -459,6 +495,24 @@
 
     </main>
   </div>
+
+  <!-- MOBILE BOTTOM NAV -->
+  <nav class="mobile-admin-nav">
+    <div class="mobile-admin-nav-inner">
+      <button class="mob-nav-btn active" id="mob-btn-dashboard" onclick="showPage('dashboard');setMobActive(this)">
+        <span class="mob-icon">📊</span>Дашборд
+      </button>
+      <button class="mob-nav-btn" id="mob-btn-add" onclick="showPage('add-item');setMobActive(this)">
+        <span class="mob-icon">➕</span>Додати
+      </button>
+      <button class="mob-nav-btn" id="mob-btn-list" onclick="showPage('items-list');setMobActive(this)">
+        <span class="mob-icon">📋</span>Страви
+      </button>
+      <button class="mob-nav-btn" id="mob-btn-photos" onclick="showPage('photos');setMobActive(this)">
+        <span class="mob-icon">🖼</span>Фото
+      </button>
+    </div>
+  </nav>
 </div>
 
 <!-- EDIT MODAL -->
@@ -516,7 +570,10 @@
 const SUPABASE_URL = 'https://wzvthkzfcjfbefgsctic.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6dnRoa3pmY2pmYmVmZ3NjdGljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMDQ4NzYsImV4cCI6MjA4OTY4MDg3Nn0.tV-RUArCTb4rYxBloe3GgLyJTq6JbCUh7c6chaN9Z-0';
 const TABLE = 'menu_items';
-const ADMIN_PASSWORD = 'burger1778admin'; // ЗМІНІТЬ ЦЕЙ ПАРОЛЬ!
+// ⚠️ ВАЖЛИВО: Цей пароль видно в коді браузера (DevTools → Sources).
+// Замініть на надійний пароль. Для справжнього захисту — використовуйте Supabase Auth.
+// Інструкція: https://supabase.com/docs/guides/auth
+const ADMIN_PASSWORD = 'Dst%\$sbhtHWReUoh'; // Пароль змінено ✅
 
 // ============ CATEGORIES ============
 const MAIN_CATS = [
@@ -902,6 +959,12 @@ function handleFileDrop(event, prefix) {
   if (file && file.type.startsWith('image/')) {
     uploadPhoto(file, prefix);
   }
+}
+
+// ============ MOBILE NAV ============
+function setMobActive(el) {
+  document.querySelectorAll('.mob-nav-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
 }
 
 // Check session
